@@ -1,24 +1,15 @@
-﻿using System.Text;
-using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
+﻿using System.Windows;
+using StudyHelper.ViewModels;
 
 namespace StudyHelper
 {
-    /// <summary>
-    /// Interaction logic for MainWindow.xaml
-    /// </summary>
     public partial class MainWindow : Window
     {
         public MainWindow()
         {
             InitializeComponent();
+            // 将前端 XAML 与后端的控制器 MainViewModel 数据中心进行绑定 [COMMON]
+            this.DataContext = new MainViewModel();
         }
     }
 }

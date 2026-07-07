@@ -4,9 +4,145 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:StudyHelper"
+        xmlns:lvc="clr-namespace:LiveChartsCore.SkiaSharpView.WPF;assembly=LiveChartsCore.SkiaSharpView.WPF"
         mc:Ignorable="d"
-        Title="MainWindow" Height="450" Width="800">
-    <Grid>
+        Title="2.5 学习养成计划" Height="700" Width="1050" Background="#F3F4F6">
 
+    <Window.Resources>
+        <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
+    </Window.Resources>
+
+    <Grid Margin="15">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="320"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+
+        <!-- 左侧：新建任务表单与打卡日历 -->
+        <Border Grid.Column="0" Background="White" CornerRadius="8" Padding="15" Margin="0,0,10,0">
+            <ScrollViewer VerticalScrollBarVisibility="Auto" BorderThickness="0">
+                <StackPanel>
+                    <TextBlock Text="新建学习计划" FontSize="18" FontWeight="Bold" Margin="0,0,0,15" Foreground="#333333"/>
+
+                    <TextBlock Text="任务主题：" Margin="0,5,0,2" Foreground="#666666"/>
+                    <TextBox Text="{Binding NewTaskTitle, UpdateSourceTrigger=PropertyChanged}" Height="30" VerticalContentAlignment="Center" Margin="0,0,0,10"/>
+
+                    <TextBlock Text="完成目标日期：" Margin="0,5,0,2" Foreground="#666666"/>
+                    <DatePicker SelectedDate="{Binding SelectedDate}" Height="30" VerticalContentAlignment="Center" Margin="0,0,0,10"/>
+
+                    <TextBlock Text="优先级：" Margin="0,5,0,2" Foreground="#666666"/>
+                    <ComboBox ItemsSource="{Binding Priorities}" SelectedItem="{Binding SelectedPriority}" Height="30" VerticalContentAlignment="Center" Margin="0,0,0,10"/>
+
+                    <CheckBox IsChecked="{Binding NeedsReview}" Content="需要复习提醒" VerticalAlignment="Center" Margin="0,5,0,15"/>
+
+                    <Button Command="{Binding AddTaskCommand}" Content="添加任务" Height="35" Background="#007ACC" Foreground="White" BorderThickness="0" Cursor="Hand" FontWeight="Bold"/>
+
+                    <Separator Margin="0,15,0,15"/>
+
+                    <!-- 打卡日历（满足打卡日历展示需求） [COMMON] -->
+                    <TextBlock Text="打卡历史日历" FontSize="14" FontWeight="Bold" Margin="0,0,0,10" Foreground="#333333"/>
+                    <Calendar SelectionMode="MultipleRange" HorizontalAlignment="Center" Margin="0,0,0,10"/>
+                </StackPanel>
+            </ScrollViewer>
+        </Border>
+
+        <!-- 右侧：看板、列表与统计图表 -->
+        <Grid Grid.Column="1" Margin="10,0,0,0">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="250"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+
+            <!-- 顶部数据分析卡片 -->
+            <Grid Grid.Row="0" Margin="0,0,0,15">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+
+                <Border Grid.Column="0" Background="White" CornerRadius="8" Padding="15" Margin="0,0,10,0">
+                    <StackPanel>
+                        <TextBlock Text="总任务添加数" Foreground="#666666" FontSize="12"/>
+                        <TextBlock Text="{Binding TotalAddedCount}" FontSize="24" FontWeight="Bold" Foreground="#333333" Margin="0,5,0,0"/>
+                    </StackPanel>
+                </Border>
+
+                <Border Grid.Column="1" Background="White" CornerRadius="8" Padding="15" Margin="10,0,0,0">
+                    <StackPanel>
+                        <TextBlock Text="当前打卡完成率" Foreground="#666666" FontSize="12"/>
+                        <TextBlock Text="{Binding CompletionRate, StringFormat={}{0:F1}%}" FontSize="24" FontWeight="Bold" Foreground="#28A745" Margin="0,5,0,5"/>
+                        <ProgressBar Value="{Binding CompletionRate}" Height="8" Foreground="#28A745" Background="#E9ECEF" BorderThickness="0"/>
+                    </StackPanel>
+                </Border>
+            </Grid>
+
+            <!-- 中间：任务分析统计图表（满足任务分析与可视化功能） [COMMON] -->
+            <Border Grid.Row="1" Background="White" CornerRadius="8" Padding="15" Margin="0,0,0,15">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+                    <TextBlock Grid.Row="0" Text="任务添加与完成率动态分析图表" FontSize="14" FontWeight="Bold" Margin="0,0,0,10" Foreground="#333333"/>
+                    <lvc:CartesianChart Grid.Row="1" Series="{Binding Series}"/>
+                </Grid>
+            </Border>
+
+            <!-- 底部：任务计划列表 -->
+            <Border Grid.Row="2" Background="White" CornerRadius="8" Padding="15">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+                    <TextBlock Grid.Row="0" Text="学习任务管理看板" FontSize="16" FontWeight="Bold" Margin="0,0,0,10" Foreground="#333333"/>
+                    <ListBox Grid.Row="1" ItemsSource="{Binding Tasks}" BorderThickness="0" ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <Border BorderBrush="#E9ECEF" BorderThickness="0,0,0,1" Padding="10" Width="600">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+
+                                        <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                                            <TextBlock Text="{Binding Title}" FontSize="14" FontWeight="SemiBold" Foreground="#333333"/>
+                                            <StackPanel Orientation="Horizontal" Margin="0,5,0,0">
+                                                <TextBlock Text="优先级：" FontSize="11" Foreground="#999999"/>
+                                                <TextBlock Text="{Binding Priority}" FontSize="11" FontWeight="Bold" Foreground="#DC3545" Margin="0,0,15,0"/>
+                                                <TextBlock Text="目标时间：" FontSize="11" Foreground="#999999"/>
+                                                <TextBlock Text="{Binding TargetTime, StringFormat={}{0:yyyy-MM-dd}}" FontSize="11" Foreground="#007ACC" Margin="0,0,15,0"/>
+                                                <TextBlock Text="需要复习：" FontSize="11" Foreground="#999999"/>
+                                                <TextBlock Text="{Binding NeedsReview}" FontSize="11" Foreground="#666666"/>
+                                            </StackPanel>
+                                        </StackPanel>
+
+                                        <TextBlock Grid.Column="1" Text="已打卡" Foreground="#28A745" FontWeight="Bold" Margin="0,0,15,0" VerticalAlignment="Center" 
+                                                   Visibility="{Binding IsCompleted, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+
+                                        <Button Grid.Column="2" Content="任务打卡" Padding="10,5" Background="#28A745" Foreground="White" BorderThickness="0" Cursor="Hand" 
+                                                Command="{Binding DataContext.CompleteTaskCommand, RelativeSource={RelativeSource AncestorType=ListBox}}" CommandParameter="{Binding}">
+                                            <Button.Style>
+                                                <Style TargetType="Button">
+                                                    <Setter Property="Visibility" Value="Visible"/>
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding IsCompleted}" Value="True">
+                                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </Button.Style>
+                                        </Button>
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                </Grid>
+            </Border>
+        </Grid>
     </Grid>
 </Window>
