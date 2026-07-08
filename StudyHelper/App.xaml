@@ -1,9 +1,8 @@
 ﻿<Application x:Class="StudyHelper.App"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:local="clr-namespace:StudyHelper"
-             StartupUri="MainWindow.xaml">
+             ShutdownMode="OnExplicitShutdown">
     <Application.Resources>
-         
+        <!-- 此处暂无全局资源，后续有需要时可向此行下方添加 ResourceDictionary -->
     </Application.Resources>
 </Application>

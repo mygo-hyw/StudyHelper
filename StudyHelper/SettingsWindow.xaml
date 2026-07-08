@@ -1,0 +1,13 @@
+﻿<Window x:Class="StudyHelper.SettingsWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="学习计划 - 设置中心" Height="400" Width="550"
+        WindowStartupLocation="CenterScreen">
+    <Grid Margin="20">
+        <StackPanel>
+            <TextBlock Text="系统设置中心" FontSize="20" FontWeight="Bold" Margin="0,0,0,20"/>
+            <TextBlock Text="在此处可以进行配置新任务、分享模板、数据分析等高级操作..." FontSize="14" Foreground="#666666"/>
+        </StackPanel>
+        <!-- 修正：将原先错误的 </Grid> 修正为 </StackPanel> 以完成正确闭合 -->
+    </Grid>
+</Window>

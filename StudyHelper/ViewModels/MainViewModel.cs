@@ -54,28 +54,30 @@ namespace StudyHelper.ViewModels
         }
 
         // 根据到期时间与优先级触发提醒（弹窗通知） [COMMON]
+        // 根据优先级与完成时间对用户进行弹窗提醒 [COMMON]
+        // 根据优先级与完成时间对用户进行弹窗提醒 [COMMON]
         private void CheckTasksForReminders(object? sender, EventArgs e)
         {
             var now = DateTime.Now;
             foreach (var task in Tasks.Where(t => !t.IsCompleted))
             {
+                // 如果任务设定的目标时间已到或即将超时 [COMMON]
                 if (task.TargetTime.Date == now.Date)
                 {
                     string alertMsg = $"【学习任务提醒】\n任务：{task.Title}\n优先级：{task.Priority}";
                     if (task.Priority == "高")
                     {
-                        MessageBox.Show(alertMsg, "高优先级紧急提醒", MessageBoxButton.OK, MessageBoxImage.Warning);
+                        // 修正：显式指定调用 System.Windows 下的 WPF 弹窗组件 [COMMON]
+                        System.Windows.MessageBox.Show(alertMsg, "高优先级红色警报", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
                     }
-                    else if (task.Priority == "中" && now.Minute % 30 == 0) // 中优先级每隔 30 分钟弹出一次 [COMMON]
+                    else if (task.Priority == "中" && now.Minute % 30 == 0) // 中优先级每 30 分钟提醒 [COMMON]
                     {
-                        MessageBox.Show(alertMsg, "普通学习提醒", MessageBoxButton.OK, MessageBoxImage.Information);
+                        // 修正：显式指定调用 System.Windows 下的 WPF 弹窗组件 [COMMON]
+                        System.Windows.MessageBox.Show(alertMsg, "普通任务提醒", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Information);
                     }
                 }
             }
         }
-
-        // 按钮绑定命令：添加自定义任务 [COMMON]
-        [RelayCommand]
         private void AddTask()
         {
             if (string.IsNullOrWhiteSpace(NewTaskTitle)) return;
