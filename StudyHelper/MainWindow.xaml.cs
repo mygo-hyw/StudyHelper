@@ -17,10 +17,14 @@ namespace StudyHelper
         private const uint SWP_NOMOVE = 0x0002;
         private const uint SWP_NOACTIVATE = 0x0010;
 
-        public MainWindow()
+        public MainWindow() : this(new MainViewModel())
+        {
+        }
+
+        public MainWindow(MainViewModel viewModel)
         {
             InitializeComponent();
-            this.DataContext = new MainViewModel();
+            this.DataContext = viewModel;
 
             // 核心：加载时和失去焦点时，确保自己死死贴在系统桌面最底层 [COMMON]
             this.Loaded += (s, e) => SendToBottom();
