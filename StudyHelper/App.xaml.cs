@@ -13,6 +13,8 @@ namespace StudyHelper
         private SettingsWindow? _settingsWindow; // 独立设置界面
         public MainViewModel MainViewModel { get; } = new MainViewModel();
 
+        public MainViewModel MainViewModel { get; } = new MainViewModel();
+
         protected override void OnStartup(StartupEventArgs e)
         {
             base.OnStartup(e);

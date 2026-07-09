@@ -24,6 +24,8 @@ namespace StudyHelper.ViewModels
         [ObservableProperty] private string _selectedPriority = "中";
         [ObservableProperty] private bool _needsReview = false;
         [ObservableProperty] private DateTime _selectedDate = DateTime.Today;
+        [ObservableProperty] private string _selectedHour = DateTime.Now.Hour.ToString("00");
+        [ObservableProperty] private string _selectedMinute = DateTime.Now.Minute.ToString("00");
 
         // 绑定前台添加子任务的输入框 [COMMON]
         [ObservableProperty] private string _newSubTaskInput = string.Empty;
@@ -32,6 +34,8 @@ namespace StudyHelper.ViewModels
         public ObservableCollection<string> Priorities { get; } = new() { "高", "中", "低" };
         public ObservableCollection<string> Themes { get; } = new() { "经典浅色", "赛博风", "森林绿", "极夜黑" };
         public ObservableCollection<LearningTask> Tasks { get; } = new();
+        public ObservableCollection<LearningSubTask> DraftSubTasks { get; } = new();
+        public ObservableCollection<DateTime> HistoryCheckInDates { get; } = new();
 
         // 动态界面换肤绑定属性（解决界面风格更改需求） [COMMON]
         [ObservableProperty] private string _widgetBackground = "#E6FFFFFF"; // 默认白
@@ -47,6 +51,7 @@ namespace StudyHelper.ViewModels
         [ObservableProperty] private ISeries[] _series;
         [ObservableProperty] private int _totalAddedCount = 0;
         [ObservableProperty] private double _completionRate = 0;
+        [ObservableProperty] private int _streakDays = 0;
 
         public MainViewModel()
         {
@@ -136,10 +141,16 @@ namespace StudyHelper.ViewModels
 
             var task = new LearningTask
             {
-                Title = NewTaskTitle,
+                Title = NewTaskTitle.Trim(),
                 Priority = SelectedPriority,
                 NeedsReview = NeedsReview,
-                TargetTime = SelectedDate
+                TargetTime = BuildSelectedTargetTime(),
+                SubTasks = new ObservableCollection<LearningSubTask>(
+                    DraftSubTasks.Select(subTask => new LearningSubTask
+                    {
+                        Title = subTask.Title,
+                        IsCompleted = subTask.IsCompleted
+                    }))
             };
 
             // 导入临时装载的子任务 [COMMON]
@@ -321,9 +332,11 @@ namespace StudyHelper.ViewModels
 
         private void UpdateStatistics()
         {
+            UpdateTaskDeadlineStates();
             TotalAddedCount = Tasks.Count;
             int completed = Tasks.Count(t => t.IsCompleted);
             CompletionRate = TotalAddedCount == 0 ? 0 : (double)completed / TotalAddedCount * 100;
+            UpdateStreakDays();
 
             Series = new ISeries[]
             {
@@ -333,6 +346,20 @@ namespace StudyHelper.ViewModels
                     Name = "任务总数 vs 已完成"
                 }
             };
+        }
+
+        private void UpdateStreakDays()
+        {
+            int streak = 0;
+            DateTime cursor = DateTime.Today;
+
+            while (HistoryCheckInDates.Any(date => date.Date == cursor))
+            {
+                streak++;
+                cursor = cursor.AddDays(-1);
+            }
+
+            StreakDays = streak;
         }
     }
 }
