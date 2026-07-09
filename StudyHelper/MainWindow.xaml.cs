@@ -1,30 +1,55 @@
 ﻿using System;
+using System.ComponentModel;
+using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Interop;
-using System.Runtime.InteropServices;
 using StudyHelper.ViewModels;
 
 namespace StudyHelper
 {
     public partial class MainWindow : Window
     {
-        // 导入 Windows 原生 API 用以控制窗口物理层级 [COMMON]
         [DllImport("user32.dll")]
         private static extern bool SetWindowPos(IntPtr hWnd, IntPtr hWndInsertAfter, int X, int Y, int cx, int cy, uint uFlags);
 
-        private static readonly IntPtr HWND_BOTTOM = new IntPtr(1); // 置于最底层 [COMMON]
+        private static readonly IntPtr HWND_BOTTOM = new IntPtr(1);
         private const uint SWP_NOSIZE = 0x0001;
         private const uint SWP_NOMOVE = 0x0002;
         private const uint SWP_NOACTIVATE = 0x0010;
 
+        private readonly MainViewModel _viewModel;
+
         public MainWindow()
         {
             InitializeComponent();
-            this.DataContext = new MainViewModel();
+            _viewModel = ((App)System.Windows.Application.Current).MainViewModel;
+            DataContext = _viewModel;
 
-            // 核心：加载时和失去焦点时，确保自己死死贴在系统桌面最底层 [COMMON]
-            this.Loaded += (s, e) => SendToBottom();
-            this.Deactivated += (s, e) => SendToBottom();
+            Loaded += (_, _) => ApplyWindowSettings();
+            _viewModel.PropertyChanged += ViewModel_PropertyChanged;
+        }
+
+        private void ViewModel_PropertyChanged(object? sender, PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName is nameof(MainViewModel.WindowOpacity) or nameof(MainViewModel.IsDesktopEmbedded))
+            {
+                Dispatcher.Invoke(ApplyWindowSettings);
+            }
+        }
+
+        private void ApplyWindowSettings()
+        {
+            Opacity = _viewModel.WindowOpacity;
+            ShowInTaskbar = !_viewModel.IsDesktopEmbedded;
+
+            if (_viewModel.IsDesktopEmbedded)
+            {
+                SendToBottom();
+            }
+            else
+            {
+                Activate();
+            }
         }
 
         private void SendToBottom()
@@ -33,9 +58,17 @@ namespace StudyHelper
             SetWindowPos(hWnd, HWND_BOTTOM, 0, 0, 0, 0, SWP_NOSIZE | SWP_NOMOVE | SWP_NOACTIVATE);
         }
 
+        private void TitleBar_MouseLeftButtonDown(object sender, System.Windows.Input.MouseButtonEventArgs e)
+        {
+            if (e.ButtonState == System.Windows.Input.MouseButtonState.Pressed)
+            {
+                DragMove();
+            }
+        }
+
         private void CloseButton_Click(object sender, RoutedEventArgs e)
         {
-            // 调用全局退出，彻底关闭程序 [COMMON]
+            // 修正：显式指定调用 System.Windows 下的 WPF 主程序实例 [COMMON]
             ((App)System.Windows.Application.Current).ExitApplication();
         }
     }

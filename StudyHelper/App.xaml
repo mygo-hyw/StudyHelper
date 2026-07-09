@@ -4,5 +4,6 @@
              ShutdownMode="OnExplicitShutdown">
     <Application.Resources>
         <!-- 此处暂无全局资源，后续有需要时可向此行下方添加 ResourceDictionary -->
+        <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
     </Application.Resources>
 </Application>

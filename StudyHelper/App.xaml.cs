@@ -2,6 +2,7 @@
 using System.Windows;
 using System.Windows.Forms; // 导入托盘组件命名空间 [COMMON]
 using System.Drawing;
+using StudyHelper.ViewModels;
 
 namespace StudyHelper
 {
@@ -10,6 +11,7 @@ namespace StudyHelper
         private NotifyIcon? _notifyIcon;
         private MainWindow? _mainWindow; // 桌面内嵌看板
         private SettingsWindow? _settingsWindow; // 独立设置界面
+        public MainViewModel MainViewModel { get; } = new MainViewModel();
 
         protected override void OnStartup(StartupEventArgs e)
         {
@@ -33,6 +35,7 @@ namespace StudyHelper
 
             // 2. 启动并显示桌面主看板 [COMMON]
             _mainWindow = new MainWindow();
+            _mainWindow.DataContext = MainViewModel;
             _mainWindow.Show();
         }
 
@@ -42,6 +45,7 @@ namespace StudyHelper
             if (_settingsWindow == null || !_settingsWindow.IsLoaded)
             {
                 _settingsWindow = new SettingsWindow();
+                _settingsWindow.DataContext = MainViewModel;
             }
 
             if (_settingsWindow.WindowState == WindowState.Minimized)

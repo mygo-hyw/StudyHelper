@@ -1,4 +1,5 @@
 ﻿using System.Windows;
+using StudyHelper.ViewModels;
 
 namespace StudyHelper
 {
@@ -7,6 +8,7 @@ namespace StudyHelper
         public SettingsWindow()
         {
             InitializeComponent();
+            DataContext = ((App)System.Windows.Application.Current).MainViewModel;
         }
     }
 }
