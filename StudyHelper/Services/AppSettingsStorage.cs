@@ -1,7 +1,6 @@
 using System;
 using System.IO;
 using System.Text.Json;
-using StudyHelper.ViewModels;
 
 namespace StudyHelper.Services
 {
@@ -32,8 +31,7 @@ namespace StudyHelper.Services
                 }
 
                 var json = File.ReadAllText(SettingsFilePath);
-                var settings = JsonSerializer.Deserialize<AppSettingsSnapshot>(json, JsonOptions);
-                return settings ?? AppSettingsSnapshot.CreateDefault();
+                return JsonSerializer.Deserialize<AppSettingsSnapshot>(json, JsonOptions) ?? AppSettingsSnapshot.CreateDefault();
             }
             catch
             {

@@ -1,8 +1,9 @@
-﻿using System;
+using System;
 using System.ComponentModel;
 using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Interop;
+using System.Windows.Input;
 using StudyHelper.ViewModels;
 
 namespace StudyHelper
@@ -12,10 +13,18 @@ namespace StudyHelper
         [DllImport("user32.dll")]
         private static extern bool SetWindowPos(IntPtr hWnd, IntPtr hWndInsertAfter, int X, int Y, int cx, int cy, uint uFlags);
 
+        [DllImport("user32.dll")]
+        private static extern bool ReleaseCapture();
+
+        [DllImport("user32.dll")]
+        private static extern int SendMessage(IntPtr hWnd, int Msg, int wParam, int lParam);
+
         private static readonly IntPtr HWND_BOTTOM = new IntPtr(1);
         private const uint SWP_NOSIZE = 0x0001;
         private const uint SWP_NOMOVE = 0x0002;
         private const uint SWP_NOACTIVATE = 0x0010;
+        private const int WM_NCLBUTTONDOWN = 0xA1;
+        private const int HT_CAPTION = 0x2;
 
         private readonly MainViewModel _viewModel;
 
@@ -40,7 +49,7 @@ namespace StudyHelper
         private void ApplyWindowSettings()
         {
             Opacity = _viewModel.WindowOpacity;
-            ShowInTaskbar = !_viewModel.IsDesktopEmbedded;
+            ShowInTaskbar = false;
 
             if (_viewModel.IsDesktopEmbedded)
             {
@@ -58,17 +67,31 @@ namespace StudyHelper
             SetWindowPos(hWnd, HWND_BOTTOM, 0, 0, 0, 0, SWP_NOSIZE | SWP_NOMOVE | SWP_NOACTIVATE);
         }
 
-        private void TitleBar_MouseLeftButtonDown(object sender, System.Windows.Input.MouseButtonEventArgs e)
+        private void TitleBar_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
-            if (e.ButtonState == System.Windows.Input.MouseButtonState.Pressed)
+            if (!_viewModel.IsDesktopEmbedded && !(e.OriginalSource is System.Windows.Controls.Button))
             {
-                DragMove();
+                try
+                {
+                    IntPtr hWnd = new WindowInteropHelper(this).Handle;
+                    ReleaseCapture();
+                    SendMessage(hWnd, WM_NCLBUTTONDOWN, HT_CAPTION, 0);
+                }
+                catch
+                {
+                    try
+                    {
+                        DragMove();
+                    }
+                    catch
+                    {
+                    }
+                }
             }
         }
 
         private void CloseButton_Click(object sender, RoutedEventArgs e)
         {
-            // 修正：显式指定调用 System.Windows 下的 WPF 主程序实例 [COMMON]
             ((App)System.Windows.Application.Current).ExitApplication();
         }
     }

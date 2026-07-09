@@ -2,6 +2,7 @@
 using CommunityToolkit.Mvvm.Input;
 using System.Collections.ObjectModel;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Windows.Threading;
 using System.Windows;
@@ -18,6 +19,9 @@ namespace StudyHelper.ViewModels
         private readonly AppSettingsStorage _settingsStorage = new();
         private DispatcherTimer _reminderTimer;
         private bool _isLoadingSettings;
+        private Dictionary<Guid, DateTime> _ignoredTasks = new(); // 记录被忽略的任务及其过期时间
+        private int _activeNotificationCount = 0; // 当前活跃的通知窗口数量
+        private DateTime _lastRefreshDate = DateTime.Today; // 用于每日零点刷新剩余天数
 
         // 任务表单临时属性 [COMMON]
         [ObservableProperty] private string _newTaskTitle = string.Empty;
@@ -32,9 +36,9 @@ namespace StudyHelper.ViewModels
         public ObservableCollection<string> TempSubTaskTitles { get; } = new();
 
         public ObservableCollection<string> Priorities { get; } = new() { "高", "中", "低" };
-        public ObservableCollection<string> Themes { get; } = new() { "经典浅色", "赛博风", "森林绿", "极夜黑" };
+        public ObservableCollection<string> Themes { get; } = new() { "经典浅色", "赛博", "森林绿", "极夜黑" };
         public ObservableCollection<LearningTask> Tasks { get; } = new();
-        public ObservableCollection<LearningSubTask> DraftSubTasks { get; } = new();
+        public ObservableCollection<SubTask> DraftSubTasks { get; } = new();
         public ObservableCollection<DateTime> HistoryCheckInDates { get; } = new();
 
         // 动态界面换肤绑定属性（解决界面风格更改需求） [COMMON]
@@ -145,8 +149,8 @@ namespace StudyHelper.ViewModels
                 Priority = SelectedPriority,
                 NeedsReview = NeedsReview,
                 TargetTime = BuildSelectedTargetTime(),
-                SubTasks = new ObservableCollection<LearningSubTask>(
-                    DraftSubTasks.Select(subTask => new LearningSubTask
+                SubTasks = new ObservableCollection<SubTask>(
+                    DraftSubTasks.Select(subTask => new SubTask
                     {
                         Title = subTask.Title,
                         IsCompleted = subTask.IsCompleted
@@ -312,27 +316,62 @@ namespace StudyHelper.ViewModels
 
         private void CheckTasksForReminders(object? sender, EventArgs e)
         {
+            // 每日零点刷新所有任务的剩余天数（每隔 30s 检查一次日期变更）
+            if (DateTime.Today > _lastRefreshDate)
+            {
+                _lastRefreshDate = DateTime.Today;
+                foreach (var task in Tasks)
+                {
+                    task.RefreshDayProperties();
+                }
+            }
+
             var now = DateTime.Now;
             foreach (var task in Tasks.Where(t => !t.IsCompleted))
             {
+                // 检查任务是否在忽略列表中
+                if (IsTaskIgnored(task.Id))
+                {
+                    continue;
+                }
+
                 if (task.TargetTime.Date == now.Date)
                 {
-                    string alertMsg = $"【学习到期提醒】\n任务：{task.Title}\n优先级：{task.Priority}";
+                    bool shouldRemind = false;
                     if (task.Priority == "高")
                     {
-                        System.Windows.MessageBox.Show(alertMsg, "高优先级警报", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
+                        shouldRemind = true;
                     }
                     else if (task.Priority == "中" && now.Minute % 30 == 0)
                     {
-                        System.Windows.MessageBox.Show(alertMsg, "常规学习提醒", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Information);
+                        shouldRemind = true;
+                    }
+
+                    if (shouldRemind)
+                    {
+                        ShowToastNotification(task);
                     }
                 }
             }
         }
 
+        private void ShowToastNotification(LearningTask task)
+        {
+            try
+            {
+                var notificationWindow = new ToastNotificationWindow(task, this);
+                notificationWindow.Show();
+            }
+            catch
+            {
+                // 如果弹窗显示失败，回退到消息框
+                string alertMsg = $"【学习到期提醒】\n任务：{task.Title}\n优先级：{task.Priority}";
+                System.Windows.MessageBox.Show(alertMsg, "学习提醒", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Information);
+            }
+        }
+
         private void UpdateStatistics()
         {
-            UpdateTaskDeadlineStates();
             TotalAddedCount = Tasks.Count;
             int completed = Tasks.Count(t => t.IsCompleted);
             CompletionRate = TotalAddedCount == 0 ? 0 : (double)completed / TotalAddedCount * 100;
@@ -348,6 +387,16 @@ namespace StudyHelper.ViewModels
             };
         }
 
+        private DateTime BuildSelectedTargetTime()
+        {
+            var date = SelectedDate.Date;
+            var hour = int.TryParse(SelectedHour, out var parsedHour) ? parsedHour : 0;
+            var minute = int.TryParse(SelectedMinute, out var parsedMinute) ? parsedMinute : 0;
+            hour = Math.Clamp(hour, 0, 23);
+            minute = Math.Clamp(minute, 0, 59);
+            return date.AddHours(hour).AddMinutes(minute);
+        }
+
         private void UpdateStreakDays()
         {
             int streak = 0;
@@ -360,6 +409,61 @@ namespace StudyHelper.ViewModels
             }
 
             StreakDays = streak;
+        }
+
+        /// <summary>
+        /// 检查任务是否在忽略列表中（1小时内）
+        /// </summary>
+        public bool IsTaskIgnored(Guid taskId)
+        {
+            if (_ignoredTasks.TryGetValue(taskId, out var expireTime))
+            {
+                if (DateTime.Now < expireTime)
+                {
+                    return true;
+                }
+                else
+                {
+                    // 过期的忽略记录，删除它
+                    _ignoredTasks.Remove(taskId);
+                }
+            }
+            return false;
+        }
+
+        /// <summary>
+        /// 忽略任务提醒 1 小时
+        /// </summary>
+        public void IgnoreTaskReminder(Guid taskId)
+        {
+            _ignoredTasks[taskId] = DateTime.Now.AddHours(1);
+        }
+
+        /// <summary>
+        /// 增加活跃通知计数（用于位置计算）
+        /// </summary>
+        public void IncrementNotificationCount()
+        {
+            _activeNotificationCount++;
+        }
+
+        /// <summary>
+        /// 减少活跃通知计数
+        /// </summary>
+        public void DecrementNotificationCount()
+        {
+            if (_activeNotificationCount > 0)
+            {
+                _activeNotificationCount--;
+            }
+        }
+
+        /// <summary>
+        /// 获取当前活跃通知计数
+        /// </summary>
+        public int GetActiveNotificationCount()
+        {
+            return _activeNotificationCount;
         }
     }
 }
