@@ -61,6 +61,7 @@ namespace StudyHelper.ViewModels
         {
             LoadUiSettings();
             InitializeDatabaseAndLoadTasks();
+            RemindAllTasks();
             InitializeTimer();
             UpdateStatistics();
         }
@@ -316,57 +317,61 @@ namespace StudyHelper.ViewModels
 
         private void CheckTasksForReminders(object? sender, EventArgs e)
         {
-            // 每日零点刷新所有任务的剩余天数（每隔 30s 检查一次日期变更）
+            var now = DateTime.Now;
+
+            // 每日零点刷新剩余天数 + 清空隔夜忽略列表 + 重新提醒全部今日任务
             if (DateTime.Today > _lastRefreshDate)
             {
                 _lastRefreshDate = DateTime.Today;
+                _ignoredTasks.Clear();
                 foreach (var task in Tasks)
                 {
                     task.RefreshDayProperties();
                 }
+                RemindAllTasks();
             }
 
-            var now = DateTime.Now;
             foreach (var task in Tasks.Where(t => !t.IsCompleted))
             {
-                // 检查任务是否在忽略列表中
                 if (IsTaskIgnored(task.Id))
                 {
                     continue;
                 }
 
-                if (task.TargetTime.Date == now.Date)
-                {
-                    bool shouldRemind = false;
-                    if (task.Priority == "高")
-                    {
-                        shouldRemind = true;
-                    }
-                    else if (task.Priority == "中" && now.Minute % 30 == 0)
-                    {
-                        shouldRemind = true;
-                    }
+                bool dateMatch = task.TargetTime.Date == now.Date;
+                bool shouldRemind = false;
 
-                    if (shouldRemind)
-                    {
-                        ShowToastNotification(task);
-                    }
+                if (task.Priority == "高" && dateMatch && now.Minute == 0 && now.Second < 15)
+                {
+                    shouldRemind = true;
+                }
+                else if (task.Priority == "中" && dateMatch && now.Hour % 3 == 0 && now.Minute == 0 && now.Second < 15)
+                {
+                    shouldRemind = true;
+                }
+
+                if (shouldRemind)
+                {
+                    ShowToastNotification(task);
                 }
             }
         }
 
         private void ShowToastNotification(LearningTask task)
         {
-            try
+            //  新代码：调用系统原生通知
+            NotificationHelper.ShowTaskNotification(task.Id.ToString(), task.Title, task.Priority);
+        }
+
+        /// <summary>
+        /// 将任务列表中所有未完成且目标时间为今天的任务全部提醒一遍（启动/每日0点）
+        /// </summary>
+        private void RemindAllTasks()
+        {
+            var today = DateTime.Today;
+            foreach (var task in Tasks.Where(t => !t.IsCompleted && t.TargetTime.Date == today))
             {
-                var notificationWindow = new ToastNotificationWindow(task, this);
-                notificationWindow.Show();
-            }
-            catch
-            {
-                // 如果弹窗显示失败，回退到消息框
-                string alertMsg = $"【学习到期提醒】\n任务：{task.Title}\n优先级：{task.Priority}";
-                System.Windows.MessageBox.Show(alertMsg, "学习提醒", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Information);
+                ShowToastNotification(task);
             }
         }
 
@@ -433,11 +438,27 @@ namespace StudyHelper.ViewModels
         }
 
         /// <summary>
-        /// 忽略任务提醒 1 小时
+        /// 过会儿提醒：忽略 10 分钟
         /// </summary>
         public void IgnoreTaskReminder(Guid taskId)
         {
-            _ignoredTasks[taskId] = DateTime.Now.AddHours(1);
+            _ignoredTasks[taskId] = DateTime.Now.AddMinutes(10);
+        }
+
+        /// <summary>
+        /// 知道了：忽略到次日 0 点
+        /// </summary>
+        public void DismissForDay(Guid taskId)
+        {
+            _ignoredTasks[taskId] = DateTime.Today.AddDays(1);
+        }
+
+        /// <summary>
+        /// 通过 ID 查找任务（供外部激活回调使用）
+        /// </summary>
+        public LearningTask? GetTaskById(Guid taskId)
+        {
+            return Tasks.FirstOrDefault(t => t.Id == taskId);
         }
 
         /// <summary>

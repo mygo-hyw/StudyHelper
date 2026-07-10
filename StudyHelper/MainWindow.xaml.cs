@@ -4,6 +4,7 @@ using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Interop;
 using System.Windows.Input;
+using StudyHelper.Services;
 using StudyHelper.ViewModels;
 
 namespace StudyHelper
@@ -27,6 +28,7 @@ namespace StudyHelper
         private const int HT_CAPTION = 0x2;
 
         private readonly MainViewModel _viewModel;
+        private readonly AppSettingsStorage _positionStorage = new();
 
         public MainWindow()
         {
@@ -34,8 +36,25 @@ namespace StudyHelper
             _viewModel = ((App)System.Windows.Application.Current).MainViewModel;
             DataContext = _viewModel;
 
-            Loaded += (_, _) => ApplyWindowSettings();
+            Loaded += OnLoaded;
+            Closing += OnClosing;
             _viewModel.PropertyChanged += ViewModel_PropertyChanged;
+        }
+
+        private void OnLoaded(object sender, RoutedEventArgs e)
+        {
+            var settings = _positionStorage.Load();
+            Left = settings.WindowLeft;
+            Top = settings.WindowTop;
+            ApplyWindowSettings();
+        }
+
+        private void OnClosing(object? sender, CancelEventArgs e)
+        {
+            var settings = _positionStorage.Load();
+            settings.WindowLeft = Left;
+            settings.WindowTop = Top;
+            _positionStorage.Save(settings);
         }
 
         private void ViewModel_PropertyChanged(object? sender, PropertyChangedEventArgs e)

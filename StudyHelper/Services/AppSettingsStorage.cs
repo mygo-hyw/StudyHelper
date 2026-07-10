@@ -52,6 +52,8 @@ namespace StudyHelper.Services
         public string SelectedTheme { get; set; } = "经典浅色";
         public double WindowOpacity { get; set; } = 0.90;
         public bool IsDesktopEmbedded { get; set; } = true;
+        public double WindowLeft { get; set; } = 50;
+        public double WindowTop { get; set; } = 50;
 
         public static AppSettingsSnapshot CreateDefault() => new();
     }
