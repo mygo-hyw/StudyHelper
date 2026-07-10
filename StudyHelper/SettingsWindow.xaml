@@ -670,7 +670,7 @@
                                           SelectedItem="{Binding SelectedTheme, Mode=TwoWay}"
                                           Margin="0,0,0,14"/>
 
-                                <TextBlock Text="透明度"
+                                <TextBlock Text="不透明度"
                                            Style="{StaticResource FieldLabelStyle}"/>
                                 <Slider Minimum="0.55"
                                         Maximum="1"

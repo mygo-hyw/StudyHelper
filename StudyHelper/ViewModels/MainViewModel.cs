@@ -372,8 +372,9 @@ namespace StudyHelper.ViewModels
 
         private void UpdateStatistics()
         {
-            TotalAddedCount = Tasks.Count;
-            int completed = Tasks.Count(t => t.IsCompleted);
+            var checkable = Tasks.Where(t => t.SubTasks.Count > 0).ToList();
+            TotalAddedCount = checkable.Count;
+            int completed = checkable.Count(t => t.IsCompleted);
             CompletionRate = TotalAddedCount == 0 ? 0 : (double)completed / TotalAddedCount * 100;
             UpdateStreakDays();
 
