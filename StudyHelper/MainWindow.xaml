@@ -119,7 +119,7 @@
             </StackPanel>
 
             <!-- 核心：支持层级折叠展开的任务列表 -->
-            <ListBox Grid.Row="2" ItemsSource="{Binding Tasks}" Background="Transparent" BorderThickness="0" ScrollViewer.HorizontalScrollBarVisibility="Disabled" ScrollViewer.VerticalScrollBarVisibility="Disabled">
+            <ListBox Grid.Row="2" ItemsSource="{Binding MainWindowTasks}" Background="Transparent" BorderThickness="0" ScrollViewer.HorizontalScrollBarVisibility="Disabled" ScrollViewer.VerticalScrollBarVisibility="Disabled">
                 <ListBox.ItemContainerStyle>
                     <Style TargetType="ListBoxItem">
                         <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
@@ -204,7 +204,8 @@
                                                     FontSize="12"
                                                     FontWeight="SemiBold"
                                                     Cursor="Hand"
-                                                    Opacity="0.98">
+                                                    Opacity="0.98"
+                                                    Visibility="{Binding IsDailyCheckIn, Converter={StaticResource BooleanToVisibilityConverter}}">
                                                 <Button.Template>
                                                     <ControlTemplate TargetType="Button">
                                                         <Border Background="{TemplateBinding Background}"

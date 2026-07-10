@@ -11,6 +11,7 @@ using StudyHelper.Models;
 using StudyHelper.Services;
 using LiveChartsCore;
 using LiveChartsCore.SkiaSharpView;
+using LiveChartsCore.Defaults;
 
 namespace StudyHelper.ViewModels
 {
@@ -31,12 +32,30 @@ namespace StudyHelper.ViewModels
         [ObservableProperty] private string _selectedHour = DateTime.Now.Hour.ToString("00");
         [ObservableProperty] private string _selectedMinute = DateTime.Now.Minute.ToString("00");
 
+        // 打卡日历选择
+        [ObservableProperty] private DateTime? _selectedCheckInDate = DateTime.Today;
+
+        // 分析日历选择
+        [ObservableProperty] private DateTime? _selectedAnalysisDate = DateTime.Today;
+
+        // 主窗口尺寸
+        [ObservableProperty] private double _mainWindowWidth = 380;
+        [ObservableProperty] private double _mainWindowHeight = double.NaN;
+
+        // 复习计划
+        [ObservableProperty] private string _customReviewDays = "1";
+        [ObservableProperty] private string _customReviewDuration = "15";
+        [ObservableProperty] private bool _isDailyTask = false;
+
         // 绑定前台添加子任务的输入框 [COMMON]
         [ObservableProperty] private string _newSubTaskInput = string.Empty;
-        public ObservableCollection<string> TempSubTaskTitles { get; } = new();
+        [ObservableProperty] private bool _newSubTaskIsDaily = true;
+        public ObservableCollection<SubTask> TempSubTaskTitles { get; } = new();
 
         public ObservableCollection<string> Priorities { get; } = new() { "高", "中", "低" };
         public ObservableCollection<string> Themes { get; } = new() { "经典浅色", "赛博", "森林绿", "极夜黑" };
+        public ObservableCollection<string> Hours { get; } = new(Enumerable.Range(0, 24).Select(x => x.ToString("00")));
+        public ObservableCollection<string> Minutes { get; } = new(Enumerable.Range(0, 60).Select(x => x.ToString("00")));
         public ObservableCollection<LearningTask> Tasks { get; } = new();
         public ObservableCollection<SubTask> DraftSubTasks { get; } = new();
         public ObservableCollection<DateTime> HistoryCheckInDates { get; } = new();
@@ -56,6 +75,27 @@ namespace StudyHelper.ViewModels
         [ObservableProperty] private int _totalAddedCount = 0;
         [ObservableProperty] private double _completionRate = 0;
         [ObservableProperty] private int _streakDays = 0;
+
+        // 分析面板属性
+        [ObservableProperty] private double _analysisCompletionRate = 0;
+        [ObservableProperty] private int _analysisTaskCount = 0;
+        [ObservableProperty] private int _analysisCompletedCount = 0;
+        [ObservableProperty] private int _analysisIncompleteCount = 0;
+        public Axis[] AnalysisXAxes { get; } = new Axis[]
+        {
+            new Axis { Labels = new[] { "总数", "已完成" } }
+        };
+
+        // 计算属性
+        public string SelectedTargetTime => BuildSelectedTargetTime().ToString("yyyy-MM-dd HH:mm");
+        public IEnumerable<LearningTask> ActiveTasks => MainWindowTasks.Where(t => t.TargetTime >= DateTime.Today);
+        public IEnumerable<LearningTask> MainWindowTasks => Tasks.Where(t => !t.ShouldAutoDelete).OrderBy(t => t.TargetTime);
+        public IEnumerable<LearningTask> ReviewPendingTasks => Tasks.Where(t => !t.ReviewPlanSet && !t.ReviewDeclined && !t.IsCompleted);
+        public IEnumerable<LearningTask> SelectedDateTasks => Tasks.Where(t => t.TargetTime.Date == (SelectedCheckInDate?.Date ?? DateTime.Today));
+
+        partial void OnSelectedDateChanged(DateTime value) => OnPropertyChanged(nameof(SelectedTargetTime));
+        partial void OnSelectedHourChanged(string value) => OnPropertyChanged(nameof(SelectedTargetTime));
+        partial void OnSelectedMinuteChanged(string value) => OnPropertyChanged(nameof(SelectedTargetTime));
 
         public MainViewModel()
         {
@@ -91,6 +131,21 @@ namespace StudyHelper.ViewModels
             }
         }
 
+        partial void OnMainWindowWidthChanged(double value)
+        {
+            if (!_isLoadingSettings) SaveUiSettings();
+        }
+
+        partial void OnSelectedCheckInDateChanged(DateTime? value)
+        {
+            OnPropertyChanged(nameof(SelectedDateTasks));
+        }
+
+        partial void OnSelectedAnalysisDateChanged(DateTime? value)
+        {
+            UpdateDateAnalysis(value);
+        }
+
         private void InitializeDatabaseAndLoadTasks()
         {
             using (var db = new StudyHelperDbContext())
@@ -109,6 +164,14 @@ namespace StudyHelper.ViewModels
                     );
                     CREATE INDEX IF NOT EXISTS ""IX_SubTasks_LearningTaskId"" ON ""SubTasks"" (""LearningTaskId"");
                 ");
+
+                // 补丁：新增字段（旧库升级）
+                try { db.Database.ExecuteSqlRaw("ALTER TABLE \"Tasks\" ADD COLUMN \"ReviewIntervalDays\" INTEGER NOT NULL DEFAULT 1"); } catch { }
+                try { db.Database.ExecuteSqlRaw("ALTER TABLE \"Tasks\" ADD COLUMN \"ReviewPlanSet\" INTEGER NOT NULL DEFAULT 0"); } catch { }
+                try { db.Database.ExecuteSqlRaw("ALTER TABLE \"Tasks\" ADD COLUMN \"ReviewDurationDays\" INTEGER NOT NULL DEFAULT 0"); } catch { }
+                try { db.Database.ExecuteSqlRaw("ALTER TABLE \"Tasks\" ADD COLUMN \"ReviewStartDate\" TEXT"); } catch { }
+                try { db.Database.ExecuteSqlRaw("ALTER TABLE \"Tasks\" ADD COLUMN \"ReviewDeclined\" INTEGER NOT NULL DEFAULT 0"); } catch { }
+                try { db.Database.ExecuteSqlRaw("ALTER TABLE \"SubTasks\" ADD COLUMN \"IsDailyCheckIn\" INTEGER NOT NULL DEFAULT 1"); } catch { }
 
                 // 如果为空，载入含有子任务的推荐模板 [COMMON]
                 if (!db.Tasks.Any())
@@ -134,8 +197,9 @@ namespace StudyHelper.ViewModels
         private void AddTempSubTask()
         {
             if (string.IsNullOrWhiteSpace(NewSubTaskInput)) return;
-            TempSubTaskTitles.Add(NewSubTaskInput);
+            TempSubTaskTitles.Add(new SubTask { Title = NewSubTaskInput, IsDailyCheckIn = NewSubTaskIsDaily });
             NewSubTaskInput = string.Empty;
+            NewSubTaskIsDaily = true;
         }
 
         // 创建大任务并保存进 SQLite [COMMON]
@@ -150,18 +214,13 @@ namespace StudyHelper.ViewModels
                 Priority = SelectedPriority,
                 NeedsReview = NeedsReview,
                 TargetTime = BuildSelectedTargetTime(),
-                SubTasks = new ObservableCollection<SubTask>(
-                    DraftSubTasks.Select(subTask => new SubTask
-                    {
-                        Title = subTask.Title,
-                        IsCompleted = subTask.IsCompleted
-                    }))
+                SubTasks = new ObservableCollection<SubTask>()
             };
 
             // 导入临时装载的子任务 [COMMON]
-            foreach (var subTitle in TempSubTaskTitles)
+            foreach (var sub in TempSubTaskTitles)
             {
-                task.SubTasks.Add(new SubTask { Title = subTitle });
+                task.SubTasks.Add(new SubTask { Title = sub.Title, LearningTaskId = task.Id, IsDailyCheckIn = sub.IsDailyCheckIn });
             }
 
             using (var db = new StudyHelperDbContext())
@@ -171,6 +230,9 @@ namespace StudyHelper.ViewModels
             }
 
             Tasks.Add(task);
+            OnPropertyChanged(nameof(MainWindowTasks));
+            OnPropertyChanged(nameof(ActiveTasks));
+            OnPropertyChanged(nameof(ReviewPendingTasks));
             NewTaskTitle = string.Empty;
             TempSubTaskTitles.Clear();
             UpdateStatistics();
@@ -181,39 +243,46 @@ namespace StudyHelper.ViewModels
         private void CompleteSubTask(SubTask subTask)
         {
             if (subTask == null) return;
+            if (subTask.Id == Guid.Empty) return;
+            if (!subTask.IsDailyCheckIn) return;
 
-            // 1. 切换状态 [COMMON]
             subTask.IsCompleted = !subTask.IsCompleted;
             subTask.CompletedDate = subTask.IsCompleted ? DateTime.Now : null;
 
-            using (var db = new StudyHelperDbContext())
+            try
             {
-                var dbSubTask = db.SubTasks.Find(subTask.Id);
-                if (dbSubTask != null)
+                using (var db = new StudyHelperDbContext())
                 {
-                    dbSubTask.IsCompleted = subTask.IsCompleted;
-                    dbSubTask.CompletedDate = subTask.CompletedDate;
-                    db.SaveChanges();
-                }
-
-                // 2. 联动更新大任务 [COMMON]
-                var parentTask = db.Tasks.Include(t => t.SubTasks).FirstOrDefault(t => t.Id == subTask.LearningTaskId);
-                if (parentTask != null)
-                {
-                    bool allDone = parentTask.SubTasks.Count > 0 && parentTask.SubTasks.All(s => s.IsCompleted);
-
-                    var inMemParent = Tasks.FirstOrDefault(t => t.Id == subTask.LearningTaskId);
-                    if (inMemParent != null)
+                    var dbSubTask = db.SubTasks.Find(subTask.Id);
+                    if (dbSubTask != null)
                     {
-                        inMemParent.IsCompleted = allDone;
-                        inMemParent.CompletedDate = allDone ? DateTime.Today : null;
+                        dbSubTask.IsCompleted = subTask.IsCompleted;
+                        dbSubTask.CompletedDate = subTask.CompletedDate;
+                        try { db.SaveChanges(); } catch (DbUpdateConcurrencyException) { }
                     }
 
-                    parentTask.IsCompleted = allDone;
-                    parentTask.CompletedDate = allDone ? DateTime.Today : null;
-                    db.SaveChanges();
+                    var parentTask = db.Tasks.Include(t => t.SubTasks).FirstOrDefault(t => t.Id == subTask.LearningTaskId);
+                    if (parentTask != null)
+                    {
+                        bool allDone = parentTask.SubTasks.Count > 0 && parentTask.SubTasks.All(s => s.IsCompleted);
+
+                        var inMemParent = Tasks.FirstOrDefault(t => t.Id == subTask.LearningTaskId);
+                        if (inMemParent != null)
+                        {
+                            inMemParent.IsCompleted = allDone;
+                            inMemParent.CompletedDate = allDone ? DateTime.Today : null;
+                        }
+
+                        parentTask.IsCompleted = allDone;
+                        parentTask.CompletedDate = allDone ? DateTime.Today : null;
+                        try { db.SaveChanges(); } catch (DbUpdateConcurrencyException) { }
+                    }
                 }
             }
+            catch { }
+            OnPropertyChanged(nameof(MainWindowTasks));
+            OnPropertyChanged(nameof(ActiveTasks));
+            OnPropertyChanged(nameof(ReviewPendingTasks));
             UpdateStatistics();
         }
 
@@ -222,13 +291,49 @@ namespace StudyHelper.ViewModels
         private void DeleteTask(LearningTask task)
         {
             if (task == null) return;
-            using (var db = new StudyHelperDbContext())
+            try
             {
-                db.Tasks.Remove(task);
-                db.SaveChanges();
+                using (var db = new StudyHelperDbContext())
+                {
+                    var dbTask = db.Tasks.Find(task.Id);
+                    if (dbTask != null)
+                    {
+                        db.Tasks.Remove(dbTask);
+                        db.SaveChanges();
+                    }
+                }
             }
+            catch { }
             Tasks.Remove(task);
+            OnPropertyChanged(nameof(MainWindowTasks));
+            OnPropertyChanged(nameof(ActiveTasks));
+            OnPropertyChanged(nameof(ReviewPendingTasks));
             UpdateStatistics();
+        }
+
+        [RelayCommand]
+        private void ApplyReviewPlan(LearningTask task)
+        {
+            if (task == null) return;
+            task.ReviewPlanSet = true;
+            task.ReviewStartDate = DateTime.Today;
+            if (int.TryParse(CustomReviewDays, out var days) && days > 0)
+                task.ReviewIntervalDays = days;
+            else
+                task.ReviewIntervalDays = 1;
+            if (int.TryParse(CustomReviewDuration, out var dur) && dur > 0)
+                task.ReviewDurationDays = dur;
+            else
+                task.ReviewDurationDays = 0;
+            OnPropertyChanged(nameof(ReviewPendingTasks));
+        }
+
+        [RelayCommand]
+        private void DeclineReview(LearningTask task)
+        {
+            if (task == null) return;
+            task.ReviewDeclined = true;
+            OnPropertyChanged(nameof(ReviewPendingTasks));
         }
 
         private void LoadUiSettings()
@@ -238,6 +343,7 @@ namespace StudyHelper.ViewModels
             SelectedTheme = NormalizeThemeName(snapshot.SelectedTheme);
             WindowOpacity = ClampOpacity(snapshot.WindowOpacity);
             IsDesktopEmbedded = snapshot.IsDesktopEmbedded;
+            MainWindowWidth = snapshot.MainWindowWidth;
             _isLoadingSettings = false;
             ApplyTheme(SelectedTheme);
         }
@@ -248,7 +354,8 @@ namespace StudyHelper.ViewModels
             {
                 SelectedTheme = SelectedTheme,
                 WindowOpacity = WindowOpacity,
-                IsDesktopEmbedded = IsDesktopEmbedded
+                IsDesktopEmbedded = IsDesktopEmbedded,
+                MainWindowWidth = MainWindowWidth
             });
         }
 
@@ -331,7 +438,10 @@ namespace StudyHelper.ViewModels
                 RemindAllTasks();
             }
 
-            foreach (var task in Tasks.Where(t => !t.IsCompleted))
+            // 每 tick 检查并清理过期任务
+            CleanupExpiredTasks();
+
+            foreach (var task in Tasks.Where(t => !t.IsCompleted).ToList())
             {
                 if (IsTaskIgnored(task.Id))
                 {
@@ -364,6 +474,38 @@ namespace StudyHelper.ViewModels
         }
 
         /// <summary>
+        /// 自动清理过期任务：无复习计划的直接删除；有复习计划的待复习天数用完后删除
+        /// </summary>
+        private void CleanupExpiredTasks()
+        {
+            var toDelete = Tasks.Where(t => t.ShouldAutoDelete).ToList();
+            if (toDelete.Count == 0) return;
+
+            using (var db = new StudyHelperDbContext())
+            {
+                foreach (var task in toDelete)
+                {
+                    var dbTask = db.Tasks.Find(task.Id);
+                    if (dbTask != null)
+                    {
+                        db.Tasks.Remove(dbTask);
+                    }
+                }
+                db.SaveChanges();
+                db.SaveChanges();
+            }
+
+            foreach (var task in toDelete)
+            {
+                Tasks.Remove(task);
+            }
+            OnPropertyChanged(nameof(MainWindowTasks));
+            OnPropertyChanged(nameof(ActiveTasks));
+            OnPropertyChanged(nameof(ReviewPendingTasks));
+            UpdateStatistics();
+        }
+
+        /// <summary>
         /// 将任务列表中所有未完成且目标时间为今天的任务全部提醒一遍（启动/每日0点）
         /// </summary>
         private void RemindAllTasks()
@@ -391,6 +533,47 @@ namespace StudyHelper.ViewModels
                     Name = "任务总数 vs 已完成"
                 }
             };
+        }
+
+        private void UpdateDateAnalysis(DateTime? date)
+        {
+            if (date == null) return;
+            var d = date.Value;
+            var dayTasks = Tasks.Where(t => t.TargetTime.Date == d.Date).ToList();
+            AnalysisTaskCount = dayTasks.Count;
+            AnalysisCompletedCount = dayTasks.Count(t => t.IsCompleted);
+            AnalysisIncompleteCount = AnalysisTaskCount - AnalysisCompletedCount;
+            AnalysisCompletionRate = AnalysisTaskCount == 0 ? 0 : (double)AnalysisCompletedCount / AnalysisTaskCount * 100;
+        }
+
+        public int GetCompletionPercent(DateTime date)
+        {
+            var dayTasks = Tasks.Where(t => t.TargetTime.Date == date.Date).ToList();
+            if (dayTasks.Count == 0) return 0;
+            int completed = dayTasks.Count(t => t.IsCompleted);
+            if (completed == 0) return 0;
+            return completed >= dayTasks.Count ? 100 : 50;
+        }
+
+        public string GetDateDetail(DateTime date)
+        {
+            var dayTasks = Tasks.Where(t => t.TargetTime.Date == date.Date).ToList();
+            if (dayTasks.Count == 0) return "该日无任务";
+
+            var lines = new System.Collections.Generic.List<string>();
+            foreach (var task in dayTasks)
+            {
+                int done = task.SubTasks.Count(s => s.IsCompleted);
+                int total = task.SubTasks.Count;
+                string status = task.IsCompleted ? "✅" : (done > 0 ? "🔄" : "⬜");
+                lines.Add($"{status} {task.Title}");
+                foreach (var sub in task.SubTasks)
+                {
+                    string mark = sub.IsCompleted ? "  ✅" : "  ⬜";
+                    lines.Add($"{mark} {sub.Title}");
+                }
+            }
+            return string.Join("\n", lines);
         }
 
         private DateTime BuildSelectedTargetTime()

@@ -33,20 +33,17 @@ namespace StudyHelper
         public MainWindow()
         {
             InitializeComponent();
-            _viewModel = ((App)System.Windows.Application.Current).MainViewModel;
-            DataContext = _viewModel;
 
-            Loaded += OnLoaded;
-            Closing += OnClosing;
-            _viewModel.PropertyChanged += ViewModel_PropertyChanged;
-        }
-
-        private void OnLoaded(object sender, RoutedEventArgs e)
-        {
             var settings = _positionStorage.Load();
             Left = settings.WindowLeft;
             Top = settings.WindowTop;
-            ApplyWindowSettings();
+
+            _viewModel = ((App)System.Windows.Application.Current).MainViewModel;
+            DataContext = _viewModel;
+
+            Loaded += (_, _) => ApplyWindowSettings();
+            Closing += OnClosing;
+            _viewModel.PropertyChanged += ViewModel_PropertyChanged;
         }
 
         private void OnClosing(object? sender, CancelEventArgs e)
@@ -62,6 +59,10 @@ namespace StudyHelper
             if (e.PropertyName is nameof(MainViewModel.WindowOpacity) or nameof(MainViewModel.IsDesktopEmbedded))
             {
                 Dispatcher.Invoke(ApplyWindowSettings);
+            }
+            else if (e.PropertyName is nameof(MainViewModel.MainWindowWidth))
+            {
+                Dispatcher.Invoke(() => Width = _viewModel.MainWindowWidth);
             }
         }
 

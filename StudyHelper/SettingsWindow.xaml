@@ -8,14 +8,19 @@
         MinHeight="620"
         MinWidth="900"
         WindowStartupLocation="CenterScreen"
-        Background="#EEF3F9"
+        WindowStyle="None"
+        AllowsTransparency="True"
+        ResizeMode="CanResizeWithGrip"
+        Background="Transparent"
         FontFamily="Microsoft YaHei UI">
     <Window.Resources>
         <SolidColorBrush x:Key="TextPrimaryBrush" Color="#17212F"/>
         <SolidColorBrush x:Key="TextMutedBrush" Color="#647184"/>
-        <SolidColorBrush x:Key="PanelBrush" Color="#FFFFFF"/>
-        <SolidColorBrush x:Key="LineBrush" Color="#DDE5EE"/>
+        <SolidColorBrush x:Key="PanelBrush" Color="#CCFFFFFF"/>
+        <SolidColorBrush x:Key="LineBrush" Color="#88FFFFFF"/>
         <SolidColorBrush x:Key="AccentBrush" Color="#2563EB"/>
+        <SolidColorBrush x:Key="GlassShellBrush" Color="#B8FFFFFF"/>
+        <SolidColorBrush x:Key="GlassShellBorderBrush" Color="#88FFFFFF"/>
 
         <Style x:Key="PanelBorderStyle" TargetType="Border">
             <Setter Property="Background" Value="{StaticResource PanelBrush}"/>
@@ -50,26 +55,24 @@
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="VerticalContentAlignment" Value="Center"/>
         </Style>
-
         <Style TargetType="DatePicker">
             <Setter Property="Height" Value="38"/>
             <Setter Property="BorderBrush" Value="#C8D2DE"/>
             <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="VerticalContentAlignment" Value="Center"/>
         </Style>
-
         <Style TargetType="ComboBox">
             <Setter Property="Height" Value="38"/>
             <Setter Property="Padding" Value="8,4"/>
             <Setter Property="BorderBrush" Value="#C8D2DE"/>
             <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="VerticalContentAlignment" Value="Center"/>
         </Style>
-
         <Style TargetType="ProgressBar">
             <Setter Property="Height" Value="10"/>
             <Setter Property="Foreground" Value="{StaticResource AccentBrush}"/>
             <Setter Property="Background" Value="#E9EEF5"/>
+        </Style>
+        <Style TargetType="Slider">
+            <Setter Property="Margin" Value="0,0,0,8"/>
         </Style>
 
         <Style x:Key="PrimaryButtonStyle" TargetType="Button">
@@ -89,6 +92,43 @@
             <Setter Property="Background" Value="#EEF4FF"/>
             <Setter Property="Foreground" Value="#1D4ED8"/>
             <Setter Property="BorderBrush" Value="#CFE0FF"/>
+        </Style>
+
+        <Style x:Key="CheckInButtonStyle" TargetType="Button" BasedOn="{StaticResource QuietButtonStyle}">
+            <Setter Property="MinWidth" Value="64"/>
+            <Style.Triggers>
+                <Trigger Property="IsEnabled" Value="False">
+                    <Setter Property="Background" Value="#D8DDE5"/>
+                    <Setter Property="BorderBrush" Value="#C7CED8"/>
+                    <Setter Property="Foreground" Value="#7B8796"/>
+                    <Setter Property="Cursor" Value="Arrow"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <Style x:Key="ChromeButtonStyle" TargetType="Button">
+            <Setter Property="Width" Value="34"/>
+            <Setter Property="Height" Value="30"/>
+            <Setter Property="Background" Value="#00FFFFFF"/>
+            <Setter Property="Foreground" Value="{StaticResource TextMutedBrush}"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="FontSize" Value="16"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}" CornerRadius="7">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Background" Value="#22FFFFFF"/>
+                                <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
         </Style>
 
         <Style x:Key="TabItemStyle" TargetType="TabItem">
@@ -150,17 +190,19 @@
         </Style>
 
         <Style x:Key="TaskCardStyle" TargetType="Border">
-            <Setter Property="Background" Value="#00FFFFFF"/>
-            <Setter Property="BorderBrush" Value="#EDF1F6"/>
-            <Setter Property="BorderThickness" Value="0,0,0,1"/>
-            <Setter Property="Padding" Value="0,0,0,10"/>
+            <Setter Property="Background" Value="#44FFFFFF"/>
+            <Setter Property="BorderBrush" Value="#B8FFFFFF"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Padding" Value="12"/>
+            <Setter Property="CornerRadius" Value="8"/>
             <Style.Triggers>
+                <DataTrigger Binding="{Binding IsOverdue}" Value="True">
+                    <Setter Property="Background" Value="#FFE7EBF0"/>
+                    <Setter Property="BorderBrush" Value="#FFC7CED8"/>
+                </DataTrigger>
                 <DataTrigger Binding="{Binding IsCompleted}" Value="True">
-                    <Setter Property="Background" Value="#DDF8E7"/>
-                    <Setter Property="BorderBrush" Value="#A7E2BC"/>
-                    <Setter Property="BorderThickness" Value="1"/>
-                    <Setter Property="CornerRadius" Value="8"/>
-                    <Setter Property="Padding" Value="12"/>
+                    <Setter Property="Background" Value="#FFDDF8E7"/>
+                    <Setter Property="BorderBrush" Value="#FFA7E2BC"/>
                 </DataTrigger>
             </Style.Triggers>
         </Style>
@@ -181,17 +223,14 @@
         </Style>
     </Window.Resources>
 
-    <Border Background="#CCFFFFFF"
-            BorderBrush="#30FFFFFF"
+    <Border Background="{StaticResource GlassShellBrush}"
+            BorderBrush="{StaticResource GlassShellBorderBrush}"
             BorderThickness="1"
             CornerRadius="14"
             Padding="22"
             Margin="10">
         <Border.Effect>
-            <DropShadowEffect BlurRadius="24"
-                              ShadowDepth="0"
-                              Opacity="0.18"
-                              Color="#000000"/>
+            <DropShadowEffect BlurRadius="24" ShadowDepth="0" Opacity="0.18" Color="#000000"/>
         </Border.Effect>
         <Grid>
             <Grid.RowDefinitions>
@@ -200,12 +239,29 @@
                 <RowDefinition Height="*"/>
             </Grid.RowDefinitions>
 
-            
+            <Grid Grid.Row="0" MouseLeftButtonDown="TitleBar_MouseLeftButtonDown">
+                <StackPanel>
+                    <TextBlock Text="托盘设置中心"
+                               FontSize="24" FontWeight="Bold"
+                               Foreground="{StaticResource TextPrimaryBrush}"/>
 
-            <TabControl Grid.Row="2"
-                        Background="Transparent"
-                        BorderThickness="0"
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                    <Border Background="#55FFFFFF" BorderBrush="#88FFFFFF"
+                            BorderThickness="1" CornerRadius="8" Padding="12,7" Margin="0,0,8,0">
+                        <TextBlock Foreground="{StaticResource AccentBrush}" FontWeight="SemiBold">
+                            <Run Text="任务 "/>
+                            <Run Text="{Binding TotalAddedCount}"/>
+                        </TextBlock>
+                    </Border>
+                    <Button Content="─" Click="MinimizeButton_Click" Style="{StaticResource ChromeButtonStyle}"/>
+                    <Button Content="×" Click="CloseButton_Click" Style="{StaticResource ChromeButtonStyle}"/>
+                </StackPanel>
+            </Grid>
+
+            <TabControl Grid.Row="2" Background="Transparent" BorderThickness="0"
                         ItemContainerStyle="{StaticResource TabItemStyle}">
+
                 <TabItem Header="任务">
                     <Grid Margin="0,18,0,0">
                         <Grid.ColumnDefinitions>
@@ -223,94 +279,126 @@
                                     <RowDefinition Height="Auto"/>
                                 </Grid.RowDefinitions>
 
-                                <TextBlock Grid.Row="0"
-                                           Text="添加自定义任务"
-                                           Style="{StaticResource SectionTitleStyle}"/>
-
-                                <ScrollViewer Grid.Row="1"
-                                              VerticalScrollBarVisibility="Auto">
+                                <TextBlock Text="添加自定义任务" Style="{StaticResource SectionTitleStyle}"/>
+                                <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
                                     <StackPanel>
-                                        <TextBlock Text="任务名称"
-                                                   Style="{StaticResource FieldLabelStyle}"/>
+                                        <TextBlock Text="任务名称" Style="{StaticResource FieldLabelStyle}"/>
                                         <TextBox Text="{Binding NewTaskTitle, UpdateSourceTrigger=PropertyChanged}"
-                                                 MaxLength="60"
-                                                 Margin="0,0,0,14"/>
+                                                 MaxLength="60" Margin="0,0,0,14"/>
 
-                                        <TextBlock Text="截止时间"
-                                                   Style="{StaticResource FieldLabelStyle}"/>
-                                        <DatePicker SelectedDate="{Binding SelectedDate, Mode=TwoWay}"
-                                                    Margin="0,0,0,14"/>
+                                        <TextBlock Text="截止时间" Style="{StaticResource FieldLabelStyle}"/>
+                                        <Border Background="#F8FAFC" BorderBrush="#E4EAF2"
+                                                BorderThickness="1" CornerRadius="8" Padding="12" Margin="0,0,0,14">
+                                            <Grid>
+                                                <Grid.RowDefinitions>
+                                                    <RowDefinition Height="Auto"/>
+                                                    <RowDefinition Height="6"/>
+                                                    <RowDefinition Height="Auto"/>
+                                                </Grid.RowDefinitions>
+                                                <TextBlock Text="日期" Style="{StaticResource FieldLabelStyle}"/>
+                                                <DatePicker Grid.Row="2"
+                                                            SelectedDate="{Binding SelectedDate, Mode=TwoWay}"/>
+                                            </Grid>
+                                        </Border>
 
                                         <Grid Margin="0,0,0,14">
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition Width="*"/>
                                                 <ColumnDefinition Width="10"/>
                                                 <ColumnDefinition Width="*"/>
-                                                <ColumnDefinition Width="10"/>
-                                                <ColumnDefinition Width="112"/>
                                             </Grid.ColumnDefinitions>
-
-                                            <StackPanel Grid.Column="0">
-                                                <TextBlock Text="优先级"
-                                                           Style="{StaticResource FieldLabelStyle}"/>
-                                                <ComboBox ItemsSource="{Binding Priorities}"
-                                                          SelectedItem="{Binding SelectedPriority, Mode=TwoWay}"/>
+                                            <StackPanel>
+                                                <TextBlock Text="小时" Style="{StaticResource FieldLabelStyle}"/>
+                                                <ComboBox ItemsSource="{Binding Hours}"
+                                                          SelectedItem="{Binding SelectedHour, Mode=TwoWay}"
+                                                          HorizontalContentAlignment="Center"/>
                                             </StackPanel>
-
                                             <StackPanel Grid.Column="2">
-                                                <TextBlock Text="复习提醒"
-                                                           Style="{StaticResource FieldLabelStyle}"/>
-                                                <CheckBox Content="加入复习提醒"
-                                                          IsChecked="{Binding NeedsReview, Mode=TwoWay}"
-                                                          VerticalAlignment="Center"
-                                                          Foreground="#344256"/>
-                                            </StackPanel>
-
-                                            <StackPanel Grid.Column="4">
-                                                <TextBlock Text="快捷操作"
-                                                           Style="{StaticResource FieldLabelStyle}"/>
-                                                <Button Content="恢复浅色主题"
-                                                        Command="{Binding ChangeStyleCommand}"
-                                                        CommandParameter="经典浅色"
-                                                        Style="{StaticResource QuietButtonStyle}"/>
+                                                <TextBlock Text="分钟" Style="{StaticResource FieldLabelStyle}"/>
+                                                <ComboBox ItemsSource="{Binding Minutes}"
+                                                          SelectedItem="{Binding SelectedMinute, Mode=TwoWay}"
+                                                          HorizontalContentAlignment="Center"/>
                                             </StackPanel>
                                         </Grid>
 
-                                        <TextBlock Text="子任务"
-                                                   Style="{StaticResource FieldLabelStyle}"/>
+                                        <StackPanel Orientation="Horizontal" Margin="0,0,0,14">
+                                            <TextBlock Text="将保存为：" Style="{StaticResource MetaTextStyle}"/>
+                                            <TextBlock Text="{Binding SelectedTargetTime}" Style="{StaticResource MetaTextStyle}"/>
+                                        </StackPanel>
+
+                                        <Grid Margin="0,0,0,14">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="10"/>
+                                                <ColumnDefinition Width="*"/>
+                                            </Grid.ColumnDefinitions>
+                                            <StackPanel>
+                                                <TextBlock Text="优先级" Style="{StaticResource FieldLabelStyle}"/>
+                                                <ComboBox ItemsSource="{Binding Priorities}"
+                                                          SelectedItem="{Binding SelectedPriority, Mode=TwoWay}"/>
+                                            </StackPanel>
+                                            <StackPanel Grid.Column="2">
+                                                <TextBlock Text="每日任务" Style="{StaticResource FieldLabelStyle}"/>
+                                                <CheckBox Content="设为每日任务"
+                                                          IsChecked="{Binding IsDailyTask, Mode=TwoWay}"
+                                                          VerticalAlignment="Center" Foreground="#344256"/>
+                                            </StackPanel>
+                                        </Grid>
+
+                                        <TextBlock Text="子任务" Style="{StaticResource FieldLabelStyle}"/>
                                         <Grid Margin="0,0,0,8">
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition Width="*"/>
                                                 <ColumnDefinition Width="8"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                                <ColumnDefinition Width="8"/>
                                                 <ColumnDefinition Width="44"/>
                                             </Grid.ColumnDefinitions>
-                                            <TextBox Text="{Binding NewSubTaskInput, UpdateSourceTrigger=PropertyChanged}"
+                                            <TextBox Grid.Column="0"
+                                                     Text="{Binding NewSubTaskInput, UpdateSourceTrigger=PropertyChanged}"
                                                      MaxLength="50"/>
-                                            <Button Grid.Column="2"
-                                                    Content="+"
+                                            <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                                                <CheckBox IsChecked="{Binding NewSubTaskIsDaily, Mode=TwoWay}"
+                                                          VerticalAlignment="Center" Foreground="#344256" FontSize="11"/>
+                                                <TextBlock Text="每日打卡" FontSize="11" Foreground="#647184" Margin="3,0,0,0"
+                                                           VerticalAlignment="Center"/>
+                                            </StackPanel>
+                                            <Button Grid.Column="4" Content="+"
                                                     Command="{Binding AddTempSubTaskCommand}"
                                                     Style="{StaticResource PrimaryButtonStyle}"/>
                                         </Grid>
 
                                         <ListBox ItemsSource="{Binding TempSubTaskTitles}"
-                                                 MinHeight="44"
-                                                 MaxHeight="150"
-                                                 BorderBrush="#E4EAF2"
-                                                 BorderThickness="1"
+                                                 MinHeight="44" MaxHeight="150"
+                                                 BorderBrush="#E4EAF2" BorderThickness="1"
                                                  Background="#80FFFFFF"
                                                  ScrollViewer.VerticalScrollBarVisibility="Auto">
                                             <ListBox.ItemContainerStyle>
                                                 <Style TargetType="ListBoxItem">
-                                                    <Setter Property="Padding" Value="0"/>
+                                                    <Setter Property="Padding" Value="4"/>
                                                     <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
                                                 </Style>
                                             </ListBox.ItemContainerStyle>
+                                            <ListBox.ItemTemplate>
+                                                <DataTemplate>
+                                                    <Grid>
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="*"/>
+                                                            <ColumnDefinition Width="Auto"/>
+                                                        </Grid.ColumnDefinitions>
+                                                        <TextBlock Text="{Binding Title}" FontSize="12"
+                                                                   Foreground="#333333" VerticalAlignment="Center"/>
+                                                        <TextBlock Grid.Column="1" Text="每日打卡" FontSize="10"
+                                                                   Foreground="#2563EB" Margin="4,0,0,0"
+                                                                   Visibility="{Binding IsDailyCheckIn, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+                                                    </Grid>
+                                                </DataTemplate>
+                                            </ListBox.ItemTemplate>
                                         </ListBox>
                                     </StackPanel>
                                 </ScrollViewer>
 
-                                <Button Grid.Row="3"
-                                        Content="+ 添加任务"
+                                <Button Grid.Row="3" Content="+ 添加任务"
                                         Command="{Binding AddTaskCommand}"
                                         Style="{StaticResource PrimaryButtonStyle}"/>
                             </Grid>
@@ -322,66 +410,47 @@
                                     <RowDefinition Height="Auto"/>
                                     <RowDefinition Height="*"/>
                                 </Grid.RowDefinitions>
-
                                 <Grid Grid.Row="0" Margin="0,0,0,12">
-                                    <TextBlock Text="任务清单"
-                                               Style="{StaticResource SectionTitleStyle}"
-                                               Margin="0"/>
-                                    <TextBlock HorizontalAlignment="Right"
-                                               VerticalAlignment="Center"
+                                    <TextBlock Text="今日及未来任务" Style="{StaticResource SectionTitleStyle}" Margin="0"/>
+                                    <TextBlock HorizontalAlignment="Right" VerticalAlignment="Center"
                                                Style="{StaticResource MetaTextStyle}">
-                                        <Run Text="{Binding TotalAddedCount}"/>
+                                        <Run Text="{Binding ActiveTasks.Count, Mode=OneWay}"/>
                                         <Run Text=" 项"/>
                                     </TextBlock>
                                 </Grid>
-
-                                <ScrollViewer Grid.Row="1"
-                                              VerticalScrollBarVisibility="Auto">
-                                    <ItemsControl ItemsSource="{Binding Tasks}">
+                                <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+                                    <ItemsControl ItemsSource="{Binding ActiveTasks}">
                                         <ItemsControl.ItemTemplate>
                                             <DataTemplate>
-                                                <Border Style="{StaticResource TaskCardStyle}"
-                                                        Margin="0,0,0,10">
+                                                <Border Style="{StaticResource TaskCardStyle}" Margin="0,0,0,10">
                                                     <Grid>
                                                         <Grid.ColumnDefinitions>
                                                             <ColumnDefinition Width="*"/>
                                                             <ColumnDefinition Width="12"/>
                                                             <ColumnDefinition Width="Auto"/>
                                                         </Grid.ColumnDefinitions>
-
                                                         <StackPanel Grid.Column="0">
-                                                            <TextBlock Text="{Binding Title}"
-                                                                       FontSize="14"
+                                                            <TextBlock Text="{Binding Title}" FontSize="14"
                                                                        FontWeight="SemiBold"
                                                                        Foreground="{StaticResource TextPrimaryBrush}"
                                                                        TextTrimming="CharacterEllipsis"/>
-                                                            <StackPanel Orientation="Horizontal"
-                                                                        Margin="0,6,0,0">
-                                                                <TextBlock Text="{Binding TargetTime, StringFormat={}{0:yyyy-MM-dd HH:mm}}"
-                                                                           Style="{StaticResource MetaTextStyle}"/>
-                                                                <TextBlock Text="  /  "
-                                                                           Foreground="#A3ADBA"
-                                                                           FontSize="12"/>
-                                                                <CheckBox Content="复习"
-                                                                          IsChecked="{Binding NeedsReview}"
-                                                                          IsEnabled="False"
-                                                                          FontSize="12"
-                                                                          Foreground="{StaticResource TextMutedBrush}"/>
-                                                            </StackPanel>
+                                                            <TextBlock Text="{Binding TargetTime, StringFormat={}{0:yyyy-MM-dd HH:mm}}"
+                                                                       Style="{StaticResource MetaTextStyle}"
+                                                                       Margin="0,4,0,0"/>
                                                         </StackPanel>
-
-                                                        <StackPanel Grid.Column="2"
-                                                                    Orientation="Horizontal"
+                                                        <StackPanel Grid.Column="2" Orientation="Horizontal"
                                                                     VerticalAlignment="Top">
                                                             <Border Style="{StaticResource PriorityBadgeStyle}"
                                                                     Margin="0,0,8,0">
                                                                 <TextBlock Text="{Binding Priority}"
                                                                            Style="{StaticResource PriorityTextStyle}"/>
                                                             </Border>
-                                                            <Button Content="打卡"
-                                                                    Command="{Binding DataContext.CompleteTaskCommand, RelativeSource={RelativeSource AncestorType=Window}}"
-                                                                    CommandParameter="{Binding}"
-                                                                    Style="{StaticResource QuietButtonStyle}"/>
+                                                            <Button Content="{Binding CheckInButtonText}"
+                                                                    IsEnabled="{Binding CanCheckIn}"
+                                                                    Command="{Binding DataContext.CompleteSubTaskCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                                    CommandParameter="{Binding SubTasks.FirstOrDefault}"
+                                                                    Style="{StaticResource CheckInButtonStyle}"
+                                                                    Visibility="Collapsed"/>
                                                             <Button Content="删除"
                                                                     Command="{Binding DataContext.DeleteTaskCommand, RelativeSource={RelativeSource AncestorType=Window}}"
                                                                     CommandParameter="{Binding}"
@@ -399,188 +468,61 @@
                     </Grid>
                 </TabItem>
 
-                <TabItem Header="提醒">
+                <TabItem Header="复习">
                     <Grid Margin="0,18,0,0">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*"/>
                             <ColumnDefinition Width="18"/>
-                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="340"/>
                         </Grid.ColumnDefinitions>
 
                         <Border Grid.Column="0" Style="{StaticResource PanelBorderStyle}">
-                            <StackPanel>
-                                <TextBlock Text="优先级提醒策略"
-                                           Style="{StaticResource SectionTitleStyle}"/>
-
-                                <Grid Margin="0,0,0,12">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="70"/>
-                                        <ColumnDefinition Width="*"/>
-                                    </Grid.ColumnDefinitions>
-                                    <Border Background="#FFE8E8"
-                                            CornerRadius="12"
-                                            Padding="9,4"
-                                            HorizontalAlignment="Left">
-                                        <TextBlock Text="高"
-                                                   Foreground="#B91C1C"
-                                                   FontWeight="SemiBold"/>
-                                    </Border>
-                                    <TextBlock Grid.Column="1"
-                                               Text="到期当天强提醒"
-                                               VerticalAlignment="Center"
-                                               Foreground="{StaticResource TextPrimaryBrush}"/>
-                                </Grid>
-
-                                <Grid Margin="0,0,0,12">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="70"/>
-                                        <ColumnDefinition Width="*"/>
-                                    </Grid.ColumnDefinitions>
-                                    <Border Background="#E8F1FF"
-                                            CornerRadius="12"
-                                            Padding="9,4"
-                                            HorizontalAlignment="Left">
-                                        <TextBlock Text="中"
-                                                   Foreground="#1D4ED8"
-                                                   FontWeight="SemiBold"/>
-                                    </Border>
-                                    <TextBlock Grid.Column="1"
-                                               Text="按固定间隔提醒"
-                                               VerticalAlignment="Center"
-                                               Foreground="{StaticResource TextPrimaryBrush}"/>
-                                </Grid>
-
-                                <Grid Margin="0,0,0,18">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="70"/>
-                                        <ColumnDefinition Width="*"/>
-                                    </Grid.ColumnDefinitions>
-                                    <Border Background="#E8F7EE"
-                                            CornerRadius="12"
-                                            Padding="9,4"
-                                            HorizontalAlignment="Left">
-                                        <TextBlock Text="低"
-                                                   Foreground="#047857"
-                                                   FontWeight="SemiBold"/>
-                                    </Border>
-                                    <TextBlock Grid.Column="1"
-                                               Text="低频提醒"
-                                               VerticalAlignment="Center"
-                                               Foreground="{StaticResource TextPrimaryBrush}"/>
-                                </Grid>
-
-                                <CheckBox Content="当前新任务开启复习提醒"
-                                          IsChecked="{Binding NeedsReview, Mode=TwoWay}"
-                                          Foreground="#344256"/>
-                            </StackPanel>
-                        </Border>
-
-                        <Border Grid.Column="2" Style="{StaticResource PanelBorderStyle}">
-                            <StackPanel>
-                                <TextBlock Text="复习节奏"
-                                           Style="{StaticResource SectionTitleStyle}"/>
-                                <UniformGrid Columns="4" Margin="0,0,0,16">
-                                    <Border Background="#F1F5F9" CornerRadius="8" Padding="12" Margin="0,0,8,0">
-                                        <TextBlock Text="第 1 天" HorizontalAlignment="Center" FontWeight="SemiBold"/>
-                                    </Border>
-                                    <Border Background="#F1F5F9" CornerRadius="8" Padding="12" Margin="0,0,8,0">
-                                        <TextBlock Text="第 3 天" HorizontalAlignment="Center" FontWeight="SemiBold"/>
-                                    </Border>
-                                    <Border Background="#F1F5F9" CornerRadius="8" Padding="12" Margin="0,0,8,0">
-                                        <TextBlock Text="第 7 天" HorizontalAlignment="Center" FontWeight="SemiBold"/>
-                                    </Border>
-                                    <Border Background="#F1F5F9" CornerRadius="8" Padding="12">
-                                        <TextBlock Text="第 15 天" HorizontalAlignment="Center" FontWeight="SemiBold"/>
-                                    </Border>
-                                </UniformGrid>
-                                <TextBlock Text="后端按 NeedsReview 与完成日期生成复习任务"
-                                           Style="{StaticResource MetaTextStyle}"/>
-                            </StackPanel>
-                        </Border>
-                    </Grid>
-                </TabItem>
-
-                <TabItem Header="打卡">
-                    <Grid Margin="0,18,0,0">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="330"/>
-                            <ColumnDefinition Width="18"/>
-                            <ColumnDefinition Width="*"/>
-                        </Grid.ColumnDefinitions>
-
-                        <Border Grid.Column="0" Style="{StaticResource PanelBorderStyle}">
-                            <StackPanel>
-                                <TextBlock Text="打卡日历"
-                                           Style="{StaticResource SectionTitleStyle}"/>
-                                <Calendar SelectionMode="MultipleRange"
-                                          HorizontalAlignment="Stretch"/>
-                            </StackPanel>
-                        </Border>
-
-                        <Border Grid.Column="2" Style="{StaticResource PanelBorderStyle}">
                             <Grid>
                                 <Grid.RowDefinitions>
                                     <RowDefinition Height="Auto"/>
                                     <RowDefinition Height="*"/>
                                 </Grid.RowDefinitions>
-
-                                <TextBlock Grid.Row="0"
-                                           Text="今日任务打卡"
-                                           Style="{StaticResource SectionTitleStyle}"/>
-
-                                <ScrollViewer Grid.Row="1"
-                                              VerticalScrollBarVisibility="Auto">
-                                    <ItemsControl ItemsSource="{Binding Tasks}">
+                                <Grid Grid.Row="0" Margin="0,0,0,12">
+                                    <TextBlock Text="待设置复习计划"
+                                               Style="{StaticResource SectionTitleStyle}" Margin="0"/>
+                                    <TextBlock HorizontalAlignment="Right" VerticalAlignment="Center"
+                                               Style="{StaticResource MetaTextStyle}">
+                                        <Run Text="待设置 "/>
+                                        <Run Text="{Binding ReviewPendingTasks.Count, Mode=OneWay}"/>
+                                        <Run Text=" 项"/>
+                                    </TextBlock>
+                                </Grid>
+                                <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+                                    <ItemsControl ItemsSource="{Binding ReviewPendingTasks}">
                                         <ItemsControl.ItemTemplate>
                                             <DataTemplate>
-                                                <Border Style="{StaticResource TaskCardStyle}"
-                                                        Margin="0,0,0,10">
+                                                <Border Style="{StaticResource TaskCardStyle}" Margin="0,0,0,10">
                                                     <Grid>
                                                         <Grid.ColumnDefinitions>
                                                             <ColumnDefinition Width="*"/>
                                                             <ColumnDefinition Width="Auto"/>
                                                         </Grid.ColumnDefinitions>
                                                         <StackPanel>
-                                                            <TextBlock Text="{Binding Title}"
-                                                                       FontSize="14"
+                                                            <TextBlock Text="{Binding Title}" FontSize="14"
                                                                        FontWeight="SemiBold"
                                                                        Foreground="{StaticResource TextPrimaryBrush}"
                                                                        TextTrimming="CharacterEllipsis"/>
                                                             <TextBlock Text="{Binding TargetTime, StringFormat=DDL：{0:yyyy-MM-dd HH:mm}}"
                                                                        Style="{StaticResource MetaTextStyle}"
                                                                        Margin="0,4,0,0"/>
-                                                            <ItemsControl ItemsSource="{Binding SubTasks}"
-                                                                          Margin="0,7,0,0">
-                                                                <ItemsControl.ItemTemplate>
-                                                                    <DataTemplate>
-                                                                        <Border Style="{StaticResource SubTaskCardStyle}">
-                                                                            <Grid>
-                                                                                <Grid.ColumnDefinitions>
-                                                                                    <ColumnDefinition Width="*"/>
-                                                                                    <ColumnDefinition Width="Auto"/>
-                                                                                </Grid.ColumnDefinitions>
-                                                                                <TextBlock Text="{Binding Title, StringFormat=- {0}}"
-                                                                                           FontSize="12"
-                                                                                           Foreground="{StaticResource TextMutedBrush}"
-                                                                                           TextTrimming="CharacterEllipsis"
-                                                                                           VerticalAlignment="Center"/>
-                                                                                <Button Grid.Column="1"
-                                                                                        Content="完成"
-                                                                                        Command="{Binding DataContext.CompleteSubTaskCommand, RelativeSource={RelativeSource AncestorType=Window}}"
-                                                                                        CommandParameter="{Binding}"
-                                                                                        Style="{StaticResource QuietButtonStyle}"
-                                                                                        Margin="8,0,0,0"/>
-                                                                            </Grid>
-                                                                        </Border>
-                                                                    </DataTemplate>
-                                                                </ItemsControl.ItemTemplate>
-                                                            </ItemsControl>
                                                         </StackPanel>
-                                                        <Button Grid.Column="1"
-                                                                Content="完成"
-                                                                Command="{Binding DataContext.CompleteTaskCommand, RelativeSource={RelativeSource AncestorType=Window}}"
-                                                                CommandParameter="{Binding}"
-                                                                Style="{StaticResource QuietButtonStyle}"/>
+                                                        <StackPanel Grid.Column="1" Orientation="Horizontal"
+                                                                    VerticalAlignment="Center" Margin="12,0,0,0">
+                                                            <Button Content="无复习计划"
+                                                                    Command="{Binding DataContext.DeclineReviewCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                                    CommandParameter="{Binding}"
+                                                                    Style="{StaticResource QuietButtonStyle}"/>
+                                                            <Button Content="使用复习方案"
+                                                                    Command="{Binding DataContext.ApplyReviewPlanCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                                    CommandParameter="{Binding}"
+                                                                    Style="{StaticResource QuietButtonStyle}"
+                                                                    Margin="8,0,0,0"/>
+                                                        </StackPanel>
                                                     </Grid>
                                                 </Border>
                                             </DataTemplate>
@@ -589,48 +531,91 @@
                                 </ScrollViewer>
                             </Grid>
                         </Border>
+
+                        <Border Grid.Column="2" Style="{StaticResource PanelBorderStyle}">
+                            <StackPanel>
+                                <TextBlock Text="复习提醒方案" Style="{StaticResource SectionTitleStyle}"/>
+                                <TextBlock Text="复习间隔（天）" Style="{StaticResource FieldLabelStyle}"/>
+                                <TextBox Text="{Binding CustomReviewDays, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                         Margin="0,0,0,14"/>
+                                <TextBlock Text="复习时长（天）" Style="{StaticResource FieldLabelStyle}"/>
+                                <TextBox Text="{Binding CustomReviewDuration, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                         Margin="0,0,0,14"/>
+                                <TextBlock Text="在待设置列表中选择任务后，点击「使用复习方案」即应用以上设置。"
+                                           Style="{StaticResource MetaTextStyle}" TextWrapping="Wrap"/>
+                            </StackPanel>
+                        </Border>
+                    </Grid>
+                </TabItem>
+
+                <TabItem Header="打卡" x:Name="CheckInTab" IsVisibleChanged="CheckInTab_IsVisibleChanged">
+                    <Grid Margin="0,18,0,0">
+                        <Border Style="{StaticResource PanelBorderStyle}">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="*"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+                                <TextBlock Text="打卡日历" Style="{StaticResource SectionTitleStyle}"/>
+                                <Viewbox Grid.Row="1" Stretch="Uniform">
+                                    <Calendar x:Name="CheckInCalendar"
+                                              SelectionMode="SingleDate"
+                                              SelectedDate="{Binding SelectedCheckInDate, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                              Loaded="CheckInCalendar_Loaded"
+                                              DisplayDateChanged="CheckInCalendar_DisplayDateChanged"
+                                              SelectedDatesChanged="CheckInCalendar_SelectedDatesChanged"
+                                              />
+                                </Viewbox>
+                                <TextBlock Grid.Row="2" Text="🟢 100%完成　🔵 部分完成　⚪ 未完成"
+                                           Style="{StaticResource MetaTextStyle}" Margin="0,12,0,0"
+                                           TextWrapping="Wrap"/>
+                            </Grid>
+                        </Border>
                     </Grid>
                 </TabItem>
 
                 <TabItem Header="分析">
                     <Grid Margin="0,18,0,0">
                         <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="320"/>
+                            <ColumnDefinition Width="340"/>
                             <ColumnDefinition Width="18"/>
                             <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
 
                         <Border Grid.Column="0" Style="{StaticResource PanelBorderStyle}">
                             <StackPanel>
-                                <TextBlock Text="完成概览"
-                                           Style="{StaticResource SectionTitleStyle}"/>
-                                <TextBlock Text="{Binding CompletionRate, StringFormat={}{0:F1}%}"
-                                           FontSize="40"
-                                           FontWeight="Bold"
-                                           Foreground="{StaticResource TextPrimaryBrush}"
-                                           Margin="0,0,0,8"/>
-                                <ProgressBar Minimum="0"
-                                             Maximum="100"
-                                             Value="{Binding CompletionRate}"
-                                             Margin="0,0,0,18"/>
+                                <TextBlock Text="日期分析" Style="{StaticResource SectionTitleStyle}"/>
+                                <Calendar SelectionMode="SingleDate"
+                                          SelectedDate="{Binding SelectedAnalysisDate, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                          HorizontalAlignment="Stretch" Margin="0,0,0,16"/>
+                                <TextBlock Text="{Binding SelectedAnalysisDate, StringFormat={}{0:yyyy-MM-dd} 完成概览}"
+                                           Style="{StaticResource SectionTitleStyle}" FontSize="16"/>
+                                <TextBlock Text="{Binding AnalysisCompletionRate, StringFormat={}{0:F1}%}"
+                                           FontSize="40" FontWeight="Bold"
+                                           Foreground="{StaticResource TextPrimaryBrush}" Margin="0,0,0,8"/>
+                                <ProgressBar Minimum="0" Maximum="100"
+                                             Value="{Binding AnalysisCompletionRate}" Margin="0,0,0,18"/>
                                 <Grid>
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="*"/>
                                         <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="*"/>
                                     </Grid.ColumnDefinitions>
                                     <StackPanel>
-                                        <TextBlock Text="已添加"
-                                                   Style="{StaticResource MetaTextStyle}"/>
-                                        <TextBlock Text="{Binding TotalAddedCount}"
-                                                   FontSize="24"
-                                                   FontWeight="SemiBold"/>
+                                        <TextBlock Text="任务数" Style="{StaticResource MetaTextStyle}"/>
+                                        <TextBlock Text="{Binding AnalysisTaskCount}"
+                                                   FontSize="22" FontWeight="SemiBold"/>
                                     </StackPanel>
                                     <StackPanel Grid.Column="1">
-                                        <TextBlock Text="当前进度"
-                                                   Style="{StaticResource MetaTextStyle}"/>
-                                        <TextBlock Text="{Binding CompletionRate, StringFormat={}{0:F0}%}"
-                                                   FontSize="24"
-                                                   FontWeight="SemiBold"/>
+                                        <TextBlock Text="已完成" Style="{StaticResource MetaTextStyle}"/>
+                                        <TextBlock Text="{Binding AnalysisCompletedCount}"
+                                                   FontSize="22" FontWeight="SemiBold"/>
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="2">
+                                        <TextBlock Text="未完成" Style="{StaticResource MetaTextStyle}"/>
+                                        <TextBlock Text="{Binding AnalysisIncompleteCount}"
+                                                   FontSize="22" FontWeight="SemiBold"/>
                                     </StackPanel>
                                 </Grid>
                             </StackPanel>
@@ -642,10 +627,9 @@
                                     <RowDefinition Height="Auto"/>
                                     <RowDefinition Height="*"/>
                                 </Grid.RowDefinitions>
-                                <TextBlock Text="任务统计图"
-                                           Style="{StaticResource SectionTitleStyle}"/>
-                                <lvc:CartesianChart Grid.Row="1"
-                                                    Series="{Binding Series}"/>
+                                <TextBlock Text="任务统计图" Style="{StaticResource SectionTitleStyle}"/>
+                                <lvc:CartesianChart Grid.Row="1" Series="{Binding Series}"
+                                                    XAxes="{Binding AnalysisXAxes}"/>
                             </Grid>
                         </Border>
                     </Grid>
@@ -661,83 +645,60 @@
 
                         <Border Grid.Column="0" Style="{StaticResource PanelBorderStyle}">
                             <StackPanel>
-                                <TextBlock Text="主题与显示模式"
-                                           Style="{StaticResource SectionTitleStyle}"/>
-
-                                <TextBlock Text="界面主题"
-                                           Style="{StaticResource FieldLabelStyle}"/>
+                                <TextBlock Text="主题与显示模式" Style="{StaticResource SectionTitleStyle}"/>
+                                <TextBlock Text="界面主题" Style="{StaticResource FieldLabelStyle}"/>
                                 <ComboBox ItemsSource="{Binding Themes}"
                                           SelectedItem="{Binding SelectedTheme, Mode=TwoWay}"
                                           Margin="0,0,0,14"/>
-
-                                <TextBlock Text="不透明度"
-                                           Style="{StaticResource FieldLabelStyle}"/>
-                                <Slider Minimum="0.55"
-                                        Maximum="1"
+                                <TextBlock Text="透明度" Style="{StaticResource FieldLabelStyle}"/>
+                                <Slider Minimum="0.55" Maximum="1"
                                         Value="{Binding WindowOpacity, Mode=TwoWay}"
-                                        TickFrequency="0.05"
-                                        IsSnapToTickEnabled="False"
-                                        Margin="0,0,0,8"/>
+                                        TickFrequency="0.05" IsSnapToTickEnabled="False"/>
                                 <TextBlock Text="{Binding WindowOpacity, StringFormat={}{0:P0}}"
-                                           Style="{StaticResource MetaTextStyle}"
-                                           Margin="0,0,0,14"/>
-
+                                           Style="{StaticResource MetaTextStyle}" Margin="0,0,0,14"/>
+                                <TextBlock Text="桌面看板宽度" Style="{StaticResource FieldLabelStyle}"/>
+                                <Slider Minimum="320" Maximum="620"
+                                        Value="{Binding MainWindowWidth, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                        TickFrequency="10" IsSnapToTickEnabled="False"/>
+                                <TextBlock Text="{Binding MainWindowWidth, StringFormat={}{0:F0}px}"
+                                           Style="{StaticResource MetaTextStyle}" Margin="0,0,0,14"/>
                                 <CheckBox Content="嵌入桌面（不显示任务栏，保持桌面挂件风格）"
                                           IsChecked="{Binding IsDesktopEmbedded, Mode=TwoWay}"
-                                          Foreground="#344256"
-                                          Margin="0,0,0,12"/>
-
-                                <TextBlock Text="说明"
-                                           Style="{StaticResource FieldLabelStyle}"/>
-                                <TextBlock Text="切换主题会同步更新桌面看板配色；透明度与桌面嵌入模式会实时作用于主窗口。"
-                                           TextWrapping="Wrap"
-                                           Foreground="{StaticResource TextMutedBrush}"/>
+                                          Foreground="#344256" Margin="0,0,0,12"/>
+                                <TextBlock Text="说明" Style="{StaticResource FieldLabelStyle}"/>
+                                <TextBlock Text="切换主题会同步更新桌面看板配色；透明度、桌面嵌入模式与看板尺寸会实时作用于主窗口。"
+                                           TextWrapping="Wrap" Foreground="{StaticResource TextMutedBrush}"/>
                             </StackPanel>
                         </Border>
 
                         <Border Grid.Column="2" Style="{StaticResource PanelBorderStyle}">
                             <StackPanel>
-                                <TextBlock Text="当前风格预览"
-                                           Style="{StaticResource SectionTitleStyle}"/>
+                                <TextBlock Text="当前风格预览" Style="{StaticResource SectionTitleStyle}"/>
                                 <Border Background="{Binding WidgetBackground}"
                                         BorderBrush="{Binding WidgetBorderBrush}"
-                                        BorderThickness="1"
-                                        CornerRadius="12"
-                                        Padding="18"
-                                        Margin="0,0,0,16">
+                                        BorderThickness="1" CornerRadius="12"
+                                        Padding="18" Margin="0,0,0,16">
                                     <StackPanel>
-                                        <TextBlock Text="今日学习养成目标"
-                                                   FontSize="18"
-                                                   FontWeight="Bold"
+                                        <TextBlock Text="今日学习养成目标" FontSize="18" FontWeight="Bold"
                                                    Foreground="{Binding WidgetTextColor}"/>
                                         <TextBlock Text="这是桌面看板的实时配色预览。"
                                                    Margin="0,6,0,0"
                                                    Foreground="{Binding WidgetTextColor}"/>
                                     </StackPanel>
                                 </Border>
-
-                                <TextBlock Text="快速预设"
-                                           Style="{StaticResource FieldLabelStyle}"/>
+                                <TextBlock Text="快速预设" Style="{StaticResource FieldLabelStyle}"/>
                                 <WrapPanel>
-                                    <Button Content="经典雅白"
-                                            Command="{Binding ChangeStyleCommand}"
-                                            CommandParameter="经典浅色"
-                                            Style="{StaticResource QuietButtonStyle}"
+                                    <Button Content="经典雅白" Command="{Binding ChangeStyleCommand}"
+                                            CommandParameter="经典浅色" Style="{StaticResource QuietButtonStyle}"
                                             Margin="0,0,8,8"/>
-                                    <Button Content="赛博青蓝"
-                                            Command="{Binding ChangeStyleCommand}"
-                                            CommandParameter="赛博风"
-                                            Style="{StaticResource QuietButtonStyle}"
+                                    <Button Content="赛博青蓝" Command="{Binding ChangeStyleCommand}"
+                                            CommandParameter="赛博风" Style="{StaticResource QuietButtonStyle}"
                                             Margin="0,0,8,8"/>
-                                    <Button Content="森林浅绿"
-                                            Command="{Binding ChangeStyleCommand}"
-                                            CommandParameter="森林绿"
-                                            Style="{StaticResource QuietButtonStyle}"
+                                    <Button Content="森林浅绿" Command="{Binding ChangeStyleCommand}"
+                                            CommandParameter="森林绿" Style="{StaticResource QuietButtonStyle}"
                                             Margin="0,0,8,8"/>
-                                    <Button Content="深夜极黑"
-                                            Command="{Binding ChangeStyleCommand}"
-                                            CommandParameter="极夜黑"
-                                            Style="{StaticResource QuietButtonStyle}"
+                                    <Button Content="深夜极黑" Command="{Binding ChangeStyleCommand}"
+                                            CommandParameter="极夜黑" Style="{StaticResource QuietButtonStyle}"
                                             Margin="0,0,8,8"/>
                                 </WrapPanel>
                             </StackPanel>

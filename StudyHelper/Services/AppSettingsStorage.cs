@@ -54,6 +54,7 @@ namespace StudyHelper.Services
         public bool IsDesktopEmbedded { get; set; } = true;
         public double WindowLeft { get; set; } = 50;
         public double WindowTop { get; set; } = 50;
+        public double MainWindowWidth { get; set; } = 380;
 
         public static AppSettingsSnapshot CreateDefault() => new();
     }

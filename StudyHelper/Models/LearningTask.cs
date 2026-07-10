@@ -16,6 +16,16 @@ namespace StudyHelper.Models
 
         [ObservableProperty] private bool _needsReview = false;
 
+        [ObservableProperty] private bool _reviewPlanSet = false;
+
+        [ObservableProperty] private bool _reviewDeclined = false;
+
+        [ObservableProperty] private int _reviewIntervalDays = 1;
+
+        [ObservableProperty] private int _reviewDurationDays = 0;
+
+        [ObservableProperty] private DateTime? _reviewStartDate;
+
         [ObservableProperty] private bool _isCompleted = false;
 
         [ObservableProperty] private DateTime? _completedDate;
@@ -30,6 +40,22 @@ namespace StudyHelper.Models
         /// </summary>
         public string DueDateDisplay => TargetTime.ToString("MM/dd");
 
+        public bool IsDueSoon => RemainingDays >= 0 && RemainingDays <= 2;
+
+        public bool IsOverdue => RemainingDays < 0;
+
+        public string CheckInButtonText => IsCompleted ? "已打卡" : "打卡";
+
+        public bool CanCheckIn => !IsCompleted && SubTasks.Count > 0;
+
+        public int ReviewDaysElapsed => ReviewStartDate.HasValue ? (DateTime.Today - ReviewStartDate.Value).Days : 0;
+
+        public bool IsInReviewPeriod => !IsCompleted && ReviewPlanSet && ReviewStartDate.HasValue && ReviewDurationDays > 0 && ReviewDaysElapsed < ReviewDurationDays && IsOverdue;
+
+        public string ReviewDisplay => IsInReviewPeriod ? $"已复习{ReviewDaysElapsed + 1}天" : "";
+
+        public bool ShouldAutoDelete => !IsCompleted && IsOverdue && (!ReviewPlanSet || (ReviewPlanSet && ReviewDurationDays > 0 && ReviewDaysElapsed >= ReviewDurationDays));
+
         /// <summary>
         /// 剩余天数（正数 = 剩余，0 = 今天，负数 = 已过期）
         /// </summary>
@@ -42,6 +68,8 @@ namespace StudyHelper.Models
         {
             get
             {
+                if (IsCompleted && RemainingDays >= 0) return "已完成";
+                if (IsInReviewPeriod) return ReviewDisplay;
                 if (RemainingDays < 0) return "已过期";
                 if (RemainingDays == 0) return "今天截止";
                 if (RemainingDays == 1) return "剩余1天";
@@ -61,12 +89,37 @@ namespace StudyHelper.Models
             OnPropertyChanged(nameof(RemainingDays));
             OnPropertyChanged(nameof(RemainingDaysDisplay));
             OnPropertyChanged(nameof(PriorityDueDateDisplay));
+            OnPropertyChanged(nameof(ShouldAutoDelete));
+            OnPropertyChanged(nameof(IsInReviewPeriod));
+            OnPropertyChanged(nameof(ReviewDisplay));
+            OnPropertyChanged(nameof(ReviewDaysElapsed));
         }
 
         // 当 Priority 变化时，通知合并显示属性更新
         partial void OnPriorityChanged(string value)
         {
             OnPropertyChanged(nameof(PriorityDueDateDisplay));
+        }
+
+        partial void OnReviewStartDateChanged(DateTime? value)
+        {
+            OnPropertyChanged(nameof(ReviewDaysElapsed));
+            OnPropertyChanged(nameof(IsInReviewPeriod));
+            OnPropertyChanged(nameof(ReviewDisplay));
+            OnPropertyChanged(nameof(RemainingDaysDisplay));
+        }
+
+        partial void OnReviewPlanSetChanged(bool value)
+        {
+            OnPropertyChanged(nameof(IsInReviewPeriod));
+            OnPropertyChanged(nameof(ReviewDisplay));
+            OnPropertyChanged(nameof(ShouldAutoDelete));
+        }
+
+        partial void OnReviewDurationDaysChanged(int value)
+        {
+            OnPropertyChanged(nameof(IsInReviewPeriod));
+            OnPropertyChanged(nameof(ShouldAutoDelete));
         }
 
         /// <summary>
@@ -78,6 +131,10 @@ namespace StudyHelper.Models
             OnPropertyChanged(nameof(RemainingDays));
             OnPropertyChanged(nameof(RemainingDaysDisplay));
             OnPropertyChanged(nameof(PriorityDueDateDisplay));
+            OnPropertyChanged(nameof(ReviewDaysElapsed));
+            OnPropertyChanged(nameof(IsInReviewPeriod));
+            OnPropertyChanged(nameof(ReviewDisplay));
+            OnPropertyChanged(nameof(ShouldAutoDelete));
         }
     }
 }
